@@ -1,5 +1,8 @@
-// RevTap™ Financial OS - Dark Mode Unified Client Controller (Mustafa)
+// RevTap™ Financial OS - FinPay-Inspired Dark Mode Client Controller (Mustafa)
 let currentFinanceData = null;
+let currentTxFilter = 'all';
+let barChartInstance = null;
+let donutChartInstance = null;
 let lastSavedTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
 // Currency Formatter for PKR
@@ -30,6 +33,54 @@ function showToast(msg, type = "success") {
   setTimeout(() => toast.remove(), 3200);
 }
 
+// View Switcher
+function switchView(viewName) {
+  const views = {
+    dashboard: document.getElementById("view-dashboard"),
+    transactions: document.getElementById("view-transactions"),
+    orders: document.getElementById("view-orders")
+  };
+
+  const navBtns = {
+    dashboard: document.getElementById("nav-btn-dashboard"),
+    transactions: document.getElementById("nav-btn-transactions"),
+    orders: document.getElementById("nav-btn-orders")
+  };
+
+  Object.keys(views).forEach(k => {
+    if (views[k]) {
+      if (k === viewName) views[k].classList.remove("hidden");
+      else views[k].classList.add("hidden");
+    }
+    if (navBtns[k]) {
+      if (k === viewName) navBtns[k].classList.add("active");
+      else navBtns[k].classList.remove("active");
+    }
+  });
+
+  lucide.createIcons();
+}
+
+// Modal Controllers
+function openModal(id) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.classList.remove("hidden");
+    el.classList.add("flex");
+  }
+}
+
+function closeModal(id) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.classList.add("hidden");
+    el.classList.remove("flex");
+  }
+}
+
+function openQrModal() { openModal("modal-qr"); }
+function closeQrModal() { closeModal("modal-qr"); }
+
 // Copy financial summary to clipboard
 function copySummary() {
   if (!currentFinanceData) return;
@@ -42,51 +93,34 @@ function copySummary() {
     `📤 Courier Fees Paid: ${formatPKR(d.totalCourierPaid)}\n` +
     `📢 Ad Spend (with Tax): ${formatPKR(d.totalEffectiveAds)}\n` +
     `🏷️ Stock Sourced: ${formatPKR(d.totalStockCost)}\n` +
-    `⛽ Petrol & Work Costs: ${formatPKR(d.totalOtherExpenses)}\n` +
+    `💼 Other Expenses: ${formatPKR(d.totalOtherExpenses)}\n` +
     `--------------------------------\n` +
     `📦 Total Customer Orders: ${d.totalOrdersCount}`;
 
   navigator.clipboard.writeText(text).then(() => {
-    showToast("Financial summary copied to clipboard!");
+    showToast("Financial report copied to clipboard!");
   }).catch(() => {
     showToast("Summary copied!");
   });
 }
 
-function openQrModal() {
-  const modal = document.getElementById("modal-qr");
-  if (modal) {
-    modal.classList.remove("hidden");
-    modal.classList.add("flex");
-  }
-}
-
-function closeQrModal() {
-  const modal = document.getElementById("modal-qr");
-  if (modal) {
-    modal.classList.add("hidden");
-    modal.classList.remove("flex");
-  }
-}
-
 // Initialize on Load
 window.addEventListener("DOMContentLoaded", () => {
   setDefaultDates();
+  initCharts();
   setupEventListeners();
   loadSystemInfo();
   loadUnifiedState();
 
-  // Periodic background sync every 10s
+  // Periodic background sync every 8s
   setInterval(() => {
     loadUnifiedState(true);
-  }, 10000);
+  }, 8000);
 });
 
-// Set today's date in all date inputs
 function setDefaultDates() {
   const today = new Date().toISOString().slice(0, 10);
-  const dateInputs = ["ctx-date", "ad-date", "stk-date", "work-exp-date"];
-  dateInputs.forEach(id => {
+  ["inflow-date", "cfee-date", "ad-date", "stock-date", "exp-date"].forEach(id => {
     const el = document.getElementById(id);
     if (el && !el.value) el.value = today;
   });
@@ -109,7 +143,91 @@ async function loadSystemInfo() {
 }
 
 // -----------------------------------------------------------------------------
-// 2. LOAD UNIFIED STATE (FETCH FROM SQLITE)
+// 2. CHART.JS INITIALIZATION (MATCHES FINPAY INSPIRATION)
+// -----------------------------------------------------------------------------
+function initCharts() {
+  // 1. Dual Bar Chart (Money Statistics)
+  const ctxBar = document.getElementById("chartMoneyStats");
+  if (ctxBar) {
+    barChartInstance = new Chart(ctxBar.getContext("2d"), {
+      type: "bar",
+      data: {
+        labels: ["Remittances", "Ad Spend (+Tax)", "Stock Sourcing", "Courier Paid", "Other Exp", "Net Pocket"],
+        datasets: [{
+          data: [0, 0, 0, 0, 0, 0],
+          backgroundColor: [
+            "#10b981", // Emerald Inflow
+            "#38bdf8", // Sky Ads
+            "#a855f7", // Purple Stock
+            "#f59e0b", // Amber Courier
+            "#f43f5e", // Rose Expenses
+            "#2563eb"  // Blue Net Profit
+          ],
+          borderRadius: 8,
+          barThickness: 24
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => ` Rs. ${Math.round(ctx.parsed.y).toLocaleString("en-PK")}`
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { color: "#94a3b8", font: { size: 10, family: 'Poppins' } }
+          },
+          y: {
+            grid: { color: "rgba(255, 255, 255, 0.05)" },
+            ticks: {
+              color: "#94a3b8",
+              font: { size: 10 },
+              callback: (val) => val >= 1000 ? (val / 1000).toFixed(0) + "k" : val
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // 2. Donut Chart (Cost Breakdown Statistics)
+  const ctxDonut = document.getElementById("chartExpenseDonut");
+  if (ctxDonut) {
+    donutChartInstance = new Chart(ctxDonut.getContext("2d"), {
+      type: "doughnut",
+      data: {
+        labels: ["Ad Spend", "Stock Sourcing", "Courier Paid", "Other Expenses"],
+        datasets: [{
+          data: [0, 0, 0, 0],
+          backgroundColor: ["#38bdf8", "#a855f7", "#f59e0b", "#f43f5e"],
+          borderWidth: 0,
+          cutout: "75%"
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => ` Rs. ${Math.round(ctx.parsed).toLocaleString("en-PK")}`
+            }
+          }
+        }
+      }
+    });
+  }
+}
+
+// -----------------------------------------------------------------------------
+// 3. LOAD UNIFIED STATE (FETCH FROM SQLITE)
 // -----------------------------------------------------------------------------
 async function loadUnifiedState(silent = false) {
   try {
@@ -120,56 +238,77 @@ async function loadUnifiedState(silent = false) {
     const d = json.data;
     currentFinanceData = d;
 
-    // 1. Master Hero Profit Display
+    // 1. Master Hero Visa Card Net Profit
     const heroProfit = document.getElementById("hero-net-profit");
     if (heroProfit) {
       heroProfit.textContent = formatPKR(d.netPocketedProfit);
       if (d.netPocketedProfit < 0) {
-        heroProfit.className = "text-3xl sm:text-5xl font-bold font-mono text-rose-400 tracking-normal";
+        heroProfit.className = "text-3xl sm:text-4xl font-bold font-mono text-rose-300 tracking-normal";
       } else {
-        heroProfit.className = "text-3xl sm:text-5xl font-bold font-mono text-white tracking-normal";
+        heroProfit.className = "text-3xl sm:text-4xl font-bold font-mono text-white tracking-normal";
       }
     }
 
     const heroStatusPill = document.getElementById("hero-status-pill");
     if (heroStatusPill) {
       if (d.netPocketedProfit >= 0) {
-        heroStatusPill.className = "pill-badge-green";
-        heroStatusPill.textContent = "● In Profit";
+        heroStatusPill.className = "px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 border border-white/30 text-white";
+        heroStatusPill.textContent = "● Live Profit";
       } else {
-        heroStatusPill.className = "pill-badge-rose";
+        heroStatusPill.className = "px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/30 border border-rose-400/40 text-rose-200";
         heroStatusPill.textContent = "● Investment Mode";
       }
     }
 
-    // 2. 4 Snapshot Badges
-    const snapCourierGot = document.getElementById("snap-courier-got");
-    if (snapCourierGot) snapCourierGot.textContent = formatPKR(d.totalCourierReceived);
+    // 2. Top 3 Metric Cards
+    const statInflow = document.getElementById("stat-total-inflow");
+    if (statInflow) statInflow.textContent = formatPKR(d.totalCourierReceived);
 
-    const snapCourierPaid = document.getElementById("snap-courier-paid");
-    if (snapCourierPaid) snapCourierPaid.textContent = formatPKR(d.totalCourierPaid);
+    const statOutflow = document.getElementById("stat-total-outflow");
+    if (statOutflow) statOutflow.textContent = formatPKR(d.totalCashOutflow);
 
-    const snapAdsTotal = document.getElementById("snap-ads-total");
-    if (snapAdsTotal) snapAdsTotal.textContent = formatPKR(d.totalEffectiveAds);
+    const statPending = document.getElementById("stat-pending-courier");
+    if (statPending) statPending.textContent = formatPKR(d.pendingCourierCash);
 
-    const snapExpensesTotal = document.getElementById("snap-expenses-total");
-    if (snapExpensesTotal) snapExpensesTotal.textContent = formatPKR(d.totalOtherExpenses);
+    const dispBalance = document.getElementById("disp-stat-balance");
+    if (dispBalance) dispBalance.textContent = formatPKR(d.netPocketedProfit);
 
-    // 3. Hub Header Total Badges
-    const sumAds = document.getElementById("disp-ad-spend-sum");
-    if (sumAds) sumAds.textContent = `Total: ${formatPKR(d.totalEffectiveAds)}`;
+    // 3. Update Legend Amounts
+    const legAds = document.getElementById("leg-ads-amt");
+    if (legAds) legAds.textContent = formatPKR(d.totalEffectiveAds);
 
-    const sumStock = document.getElementById("disp-stock-sum");
-    if (sumStock) sumStock.textContent = `Total Sourced: ${formatPKR(d.totalStockCost)}`;
+    const legStock = document.getElementById("leg-stock-amt");
+    if (legStock) legStock.textContent = formatPKR(d.totalStockCost);
 
-    const sumExp = document.getElementById("disp-expenses-sum");
-    if (sumExp) sumExp.textContent = `Total: ${formatPKR(d.totalOtherExpenses)}`;
+    const legCourier = document.getElementById("leg-courier-amt");
+    if (legCourier) legCourier.textContent = formatPKR(d.totalCourierPaid);
 
-    // 4. Render All Hub Tables
-    renderCourierTransactions(d.courierTx);
-    renderAdSpends(d.adSpends);
-    renderStockEntries(d.stockEntries);
-    renderWorkExpenses(d.expenses);
+    const legExp = document.getElementById("leg-exp-amt");
+    if (legExp) legExp.textContent = formatPKR(d.totalOtherExpenses);
+
+    // 4. Update Bar & Donut Charts
+    if (barChartInstance) {
+      barChartInstance.data.datasets[0].data = [
+        d.totalCourierReceived,
+        d.totalEffectiveAds,
+        d.totalStockCost,
+        d.totalCourierPaid,
+        d.totalOtherExpenses,
+        Math.max(0, d.netPocketedProfit)
+      ];
+      barChartInstance.update();
+    }
+
+    if (donutChartInstance) {
+      const costs = [d.totalEffectiveAds, d.totalStockCost, d.totalCourierPaid, d.totalOtherExpenses];
+      const hasCost = costs.some(c => c > 0);
+      donutChartInstance.data.datasets[0].data = hasCost ? costs : [1, 1, 1, 1];
+      donutChartInstance.update();
+    }
+
+    // 5. Render Recent Transactions Table
+    renderRecentTransactions(d.allTransactions);
+    renderFullTransactions(d.allTransactions);
     renderOrders(d.orders);
 
     updateAutoSaveBadge(d.lastUpdated);
@@ -180,36 +319,70 @@ async function loadUnifiedState(silent = false) {
 }
 
 // -----------------------------------------------------------------------------
-// 3. RENDER HUB TABLES
+// 4. TRANSACTIONS LEDGER RENDERING (CHRONOLOGICAL STREAM)
 // -----------------------------------------------------------------------------
+function filterRecentTx(filter) {
+  currentTxFilter = filter;
+  const buttons = document.querySelectorAll(".tx-filter-btn");
+  buttons.forEach(b => b.classList.remove("active", "bg-blue-600", "text-white"));
+  if (event && event.currentTarget) {
+    event.currentTarget.classList.add("active", "bg-blue-600", "text-white");
+  }
+  if (currentFinanceData) {
+    renderRecentTransactions(currentFinanceData.allTransactions);
+  }
+}
 
-// Hub 1: Courier Transactions
-function renderCourierTransactions(list) {
-  const tbody = document.getElementById("courier-tx-tbody");
+function renderRecentTransactions(list) {
+  const tbody = document.getElementById("recent-tx-tbody");
   if (!tbody) return;
 
   if (!list || list.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" class="py-5 text-center text-slate-500 text-xs">No courier transactions logged yet.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-500 text-xs">No transactions logged yet. Click any button above to log remittances, ads, or expenses!</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = list.map(t => {
-    const isRecv = t.type === "RECEIVED_FROM_COURIER";
-    const typeBadge = isRecv 
-      ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-950/80 text-emerald-300 border border-emerald-700/60">Received</span>`
-      : `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-950/80 text-amber-300 border border-amber-700/60">Paid</span>`;
-    
-    const amtColor = isRecv ? "text-emerald-400" : "text-amber-300";
-    const amtSign = isRecv ? "+" : "-";
+  // Filter list based on current active tab
+  let filtered = list;
+  if (currentTxFilter === 'income') filtered = list.filter(t => t.type === 'INCOME');
+  else if (currentTxFilter === 'ads') filtered = list.filter(t => t.kind === 'ads');
+  else if (currentTxFilter === 'stock') filtered = list.filter(t => t.kind === 'stock');
+  else if (currentTxFilter === 'expenses') filtered = list.filter(t => t.kind === 'other_expense');
+
+  tbody.innerHTML = filtered.map(t => {
+    const isIncome = t.type === 'INCOME';
+    const amtColor = isIncome ? "text-emerald-400 font-bold" : "text-slate-200 font-semibold";
+    const amtSign = isIncome ? "+" : "-";
+
+    let iconHtml = `<i data-lucide="arrow-down-left" class="w-3.5 h-3.5 text-emerald-400"></i>`;
+    if (t.kind === 'ads') iconHtml = `<i data-lucide="megaphone" class="w-3.5 h-3.5 text-sky-400"></i>`;
+    else if (t.kind === 'stock') iconHtml = `<i data-lucide="boxes" class="w-3.5 h-3.5 text-purple-400"></i>`;
+    else if (t.kind === 'other_expense') iconHtml = `<i data-lucide="receipt" class="w-3.5 h-3.5 text-rose-400"></i>`;
+    else if (t.kind === 'courier' && !isIncome) iconHtml = `<i data-lucide="truck" class="w-3.5 h-3.5 text-amber-400"></i>`;
 
     return `
       <tr class="hover:bg-white/[0.02] transition">
-        <td class="py-2 px-2.5 font-mono text-[11px] text-slate-300">${t.tx_date}</td>
-        <td class="py-2 px-2">${typeBadge}</td>
-        <td class="py-2 px-2 font-medium text-white">${t.courier}</td>
-        <td class="py-2 px-2 text-right font-mono font-semibold ${amtColor} text-xs">${amtSign} ${formatPKR(t.amount)}</td>
-        <td class="py-2 px-2 text-center">
-          <button onclick="deleteCourierTx('${t.id}')" class="p-1 text-slate-500 hover:text-rose-400 transition" title="Delete">
+        <td class="py-3 px-3">
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-lg bg-white/[0.05] border border-white/10 flex items-center justify-center shrink-0">
+              ${iconHtml}
+            </div>
+            <div>
+              <span class="font-medium text-white block text-xs">${t.title}</span>
+              <span class="text-[10px] text-slate-400">${t.category}</span>
+            </div>
+          </div>
+        </td>
+        <td class="py-3 px-3 font-mono text-[11px] text-slate-300">${t.date}</td>
+        <td class="py-3 px-3 text-slate-400 text-xs truncate max-w-[140px]">${t.notes || '—'}</td>
+        <td class="py-3 px-3 text-right font-mono ${amtColor} text-xs">${amtSign} ${formatPKR(t.amount)}</td>
+        <td class="py-3 px-3 text-center">
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${isIncome ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-700/60' : 'bg-slate-800 text-slate-300 border border-slate-700'}">
+            ${t.status}
+          </span>
+        </td>
+        <td class="py-3 px-3 text-center">
+          <button onclick="deleteTx('${t.kind}', '${t.id}')" class="p-1 text-slate-500 hover:text-rose-400 transition" title="Delete">
             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
           </button>
         </td>
@@ -219,139 +392,76 @@ function renderCourierTransactions(list) {
   lucide.createIcons();
 }
 
-async function deleteCourierTx(id) {
-  try {
-    const res = await fetch(`/api/courier-tx/${id}`, { method: "DELETE" });
-    const data = await res.json();
-    if (data.success) {
-      showToast("Courier record removed");
-      loadUnifiedState();
-    }
-  } catch (e) {}
-}
-
-// Hub 2: Ad Spend Entries
-function renderAdSpends(list) {
-  const tbody = document.getElementById("ad-spend-tbody");
+function renderFullTransactions(list) {
+  const tbody = document.getElementById("full-tx-tbody");
   if (!tbody) return;
 
   if (!list || list.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" class="py-5 text-center text-slate-500 text-xs">No ad spend logged yet.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-500 text-xs">No transactions recorded.</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = list.map(a => `
-    <tr class="hover:bg-white/[0.02] transition">
-      <td class="py-2 px-2.5 font-mono text-[11px] text-slate-300">${a.spend_date}</td>
-      <td class="py-2 px-2">
-        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-950/80 text-sky-300 border border-sky-700/60">${a.platform}</span>
-      </td>
-      <td class="py-2 px-2 text-white font-normal text-xs truncate max-w-[120px]">${a.campaign_name || 'Campaign'}</td>
-      <td class="py-2 px-2 text-right font-mono font-semibold text-sky-300 text-xs">${formatPKR(a.effective_spend)}</td>
-      <td class="py-2 px-2 text-center">
-        <button onclick="deleteAdSpend('${a.id}')" class="p-1 text-slate-500 hover:text-rose-400 transition" title="Delete">
-          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-        </button>
-      </td>
-    </tr>
-  `).join("");
+  tbody.innerHTML = list.map(t => {
+    const isIncome = t.type === 'INCOME';
+    const amtColor = isIncome ? "text-emerald-400 font-bold" : "text-white font-semibold";
+    const amtSign = isIncome ? "+" : "-";
+
+    return `
+      <tr class="hover:bg-white/[0.02] transition">
+        <td class="py-3 px-3 font-mono text-[11px] text-slate-400">${t.id}</td>
+        <td class="py-3 px-3">
+          <span class="font-medium text-white block text-xs">${t.title}</span>
+          <span class="text-[10px] text-slate-400">${t.category}</span>
+        </td>
+        <td class="py-3 px-3 font-mono text-[11px] text-slate-300">${t.date}</td>
+        <td class="py-3 px-3 text-slate-400 text-xs">${t.notes || '—'}</td>
+        <td class="py-3 px-3 text-right font-mono ${amtColor} text-xs">${amtSign} ${formatPKR(t.amount)}</td>
+        <td class="py-3 px-3 text-center">
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${isIncome ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-700/60' : 'bg-slate-800 text-slate-300 border border-slate-700'}">
+            ${t.status}
+          </span>
+        </td>
+        <td class="py-3 px-3 text-center">
+          <button onclick="deleteTx('${t.kind}', '${t.id}')" class="p-1 text-slate-500 hover:text-rose-400 transition" title="Delete">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join("");
   lucide.createIcons();
 }
 
-async function deleteAdSpend(id) {
+async function deleteTx(kind, id) {
+  let endpoint = "";
+  if (kind === "courier") endpoint = `/api/courier-tx/${id}`;
+  else if (kind === "ads") endpoint = `/api/ad-spend/${id}`;
+  else if (kind === "stock") endpoint = `/api/stock-entry/${id}`;
+  else if (kind === "other_expense") endpoint = `/api/expense/${id}`;
+
+  if (!endpoint) return;
+
   try {
-    const res = await fetch(`/api/ad-spend/${id}`, { method: "DELETE" });
+    const res = await fetch(endpoint, { method: "DELETE" });
     const data = await res.json();
     if (data.success) {
-      showToast("Ad spend entry removed");
+      showToast("Transaction removed");
       loadUnifiedState();
     }
-  } catch (e) {}
-}
-
-// Hub 3: Stock Entries
-function renderStockEntries(list) {
-  const tbody = document.getElementById("stock-tbody");
-  if (!tbody) return;
-
-  if (!list || list.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" class="py-5 text-center text-slate-500 text-xs">No inventory batches logged yet.</td></tr>`;
-    return;
+  } catch (e) {
+    showToast("Error removing transaction", "error");
   }
-
-  tbody.innerHTML = list.map(s => `
-    <tr class="hover:bg-white/[0.02] transition">
-      <td class="py-2 px-2.5 font-mono text-[11px] text-slate-300">${s.entry_date}</td>
-      <td class="py-2 px-2 font-medium text-white text-xs">${s.item_name}</td>
-      <td class="py-2 px-2 text-slate-400 text-[11px]">${s.supplier || '—'}</td>
-      <td class="py-2 px-2 text-right font-mono font-semibold text-emerald-400 text-xs">${formatPKR(s.total_cost)}</td>
-      <td class="py-2 px-2 text-center">
-        <button onclick="deleteStockEntry('${s.id}')" class="p-1 text-slate-500 hover:text-rose-400 transition" title="Delete">
-          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-        </button>
-      </td>
-    </tr>
-  `).join("");
-  lucide.createIcons();
 }
 
-async function deleteStockEntry(id) {
-  try {
-    const res = await fetch(`/api/stock-entry/${id}`, { method: "DELETE" });
-    const data = await res.json();
-    if (data.success) {
-      showToast("Stock entry removed");
-      loadUnifiedState();
-    }
-  } catch (e) {}
-}
-
-// Hub 4: Business & Work Expenses
-function renderWorkExpenses(list) {
-  const tbody = document.getElementById("work-exp-tbody");
-  if (!tbody) return;
-
-  if (!list || list.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" class="py-5 text-center text-slate-500 text-xs">No work expenses logged yet.</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = list.map(e => `
-    <tr class="hover:bg-white/[0.02] transition">
-      <td class="py-2 px-2.5 font-mono text-[11px] text-slate-300">${e.expense_date}</td>
-      <td class="py-2 px-2">
-        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-950/80 text-rose-300 border border-rose-700/60">${e.category}</span>
-      </td>
-      <td class="py-2 px-2 text-white font-normal text-xs truncate max-w-[140px]">${e.description}</td>
-      <td class="py-2 px-2 text-right font-mono font-semibold text-rose-400 text-xs">${formatPKR(e.amount)}</td>
-      <td class="py-2 px-2 text-center">
-        <button onclick="deleteWorkExpense('${e.id}')" class="p-1 text-slate-500 hover:text-rose-400 transition" title="Delete">
-          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-        </button>
-      </td>
-    </tr>
-  `).join("");
-  lucide.createIcons();
-}
-
-async function deleteWorkExpense(id) {
-  try {
-    const res = await fetch(`/api/expense/${id}`, { method: "DELETE" });
-    const data = await res.json();
-    if (data.success) {
-      showToast("Work expense removed");
-      loadUnifiedState();
-    }
-  } catch (e) {}
-}
-
-// Hub 5: Orders & Dispatches
+// -----------------------------------------------------------------------------
+// 5. ORDERS VIEW RENDERING
+// -----------------------------------------------------------------------------
 function renderOrders(orders) {
-  const tbody = document.getElementById("orders-tbody");
+  const tbody = document.getElementById("orders-full-tbody");
   if (!tbody) return;
 
   if (!orders || orders.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" class="py-5 text-center text-slate-500 text-xs">No customer parcels logged yet.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-500 text-xs">No customer orders logged yet.</td></tr>`;
     return;
   }
 
@@ -359,23 +469,25 @@ function renderOrders(orders) {
     let statusClass = "bg-sky-950/80 text-sky-300 border-sky-700/60";
     if (o.status === "Delivered") statusClass = "bg-emerald-950/80 text-emerald-300 border-emerald-700/60";
     else if (o.status === "Returned") statusClass = "bg-rose-950/80 text-rose-300 border-rose-700/60";
-    else if (o.status === "Cancelled") statusClass = "bg-slate-800 text-slate-400 border-slate-700";
 
     return `
       <tr class="hover:bg-white/[0.02] transition">
-        <td class="py-2 px-2.5 font-mono text-[11px] text-white">${o.id}</td>
-        <td class="py-2 px-2">
+        <td class="py-2.5 px-3">
+          <span class="font-mono font-bold text-white block text-xs">${o.id}</span>
+          <span class="text-[10px] text-slate-400 font-mono">${o.order_date}</span>
+        </td>
+        <td class="py-2.5 px-3">
           <span class="font-medium text-white block text-xs">${o.customer_name}</span>
           <span class="text-[10px] text-slate-400">${o.customer_city}</span>
         </td>
-        <td class="py-2 px-2 font-mono text-[11px] text-slate-300">${o.tracking_number || '—'}</td>
-        <td class="py-2 px-2 text-right font-mono font-semibold text-white text-xs">${formatPKR(o.selling_price)}</td>
-        <td class="py-2 px-2 text-center">
-          <button onclick="cycleOrderStatus('${o.id}')" title="Click to toggle status" class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${statusClass} cursor-pointer hover:opacity-80 transition active:scale-95">
+        <td class="py-2.5 px-3 font-mono text-[11px] text-slate-300">${o.tracking_number || '—'}</td>
+        <td class="py-2.5 px-3 text-right font-mono font-bold text-white text-xs">${formatPKR(o.selling_price)}</td>
+        <td class="py-2.5 px-3 text-center">
+          <button onclick="cycleOrderStatus('${o.id}')" title="Click to change status" class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${statusClass} cursor-pointer hover:opacity-80 transition active:scale-95">
             ${o.status} ↻
           </button>
         </td>
-        <td class="py-2 px-2 text-center">
+        <td class="py-2.5 px-3 text-center">
           <button onclick="deleteOrder('${o.id}')" class="p-1 text-slate-500 hover:text-rose-400 transition" title="Delete">
             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
           </button>
@@ -409,74 +521,21 @@ async function deleteOrder(id) {
 }
 
 // -----------------------------------------------------------------------------
-// 4. EVENT LISTENERS & FORM SUBMISSIONS
+// 6. FORM SUBMISSION EVENT LISTENERS
 // -----------------------------------------------------------------------------
 function setupEventListeners() {
   
-  // Courier Tab Toggle (Paid vs Received)
-  const btnPaid = document.getElementById("tab-btn-courier-paid");
-  const btnRecv = document.getElementById("tab-btn-courier-recv");
-  const ctxType = document.getElementById("ctx-type");
-  const ctxLabel = document.getElementById("ctx-amount-label");
-  const ctxSubmit = document.getElementById("btn-submit-courier-tx");
-
-  if (btnPaid && btnRecv) {
-    btnPaid.addEventListener("click", () => {
-      ctxType.value = "PAID_TO_COURIER";
-      btnPaid.className = "px-2.5 py-1 rounded-lg bg-amber-600 text-white transition";
-      btnRecv.className = "px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition";
-      ctxLabel.className = "block text-[11px] font-semibold text-amber-300 mb-1";
-      ctxLabel.textContent = "Amount Paid (Rs.) *";
-      ctxSubmit.className = "py-2.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs shadow transition flex items-center justify-center gap-1.5";
-      ctxSubmit.innerHTML = `<i data-lucide="plus" class="w-4 h-4"></i><span>Save Record</span>`;
-      lucide.createIcons();
-    });
-
-    btnRecv.addEventListener("click", () => {
-      ctxType.value = "RECEIVED_FROM_COURIER";
-      btnRecv.className = "px-2.5 py-1 rounded-lg bg-emerald-600 text-white transition";
-      btnPaid.className = "px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition";
-      ctxLabel.className = "block text-[11px] font-semibold text-emerald-300 mb-1";
-      ctxLabel.textContent = "Remittance Got (Rs.) *";
-      ctxSubmit.className = "py-2.5 px-4 rounded-xl btn-emerald text-white font-semibold text-xs shadow transition flex items-center justify-center gap-1.5";
-      ctxSubmit.innerHTML = `<i data-lucide="plus" class="w-4 h-4"></i><span>Log Remittance</span>`;
-      lucide.createIcons();
-    });
-  }
-
-  // Work Expense Category Pills
-  const catPills = document.querySelectorAll(".category-pill");
-  const hiddenExpCat = document.getElementById("work-exp-cat");
-  catPills.forEach(pill => {
-    pill.addEventListener("click", () => {
-      catPills.forEach(p => p.classList.remove("active"));
-      pill.classList.add("active");
-      if (hiddenExpCat) {
-        hiddenExpCat.value = pill.getAttribute("data-cat");
-      }
-    });
-  });
-
-  // Toggle Customer Order Form
-  const btnToggleOrder = document.getElementById("btn-toggle-add-order");
-  const formAddOrder = document.getElementById("form-add-order");
-  if (btnToggleOrder && formAddOrder) {
-    btnToggleOrder.addEventListener("click", () => {
-      formAddOrder.classList.toggle("hidden");
-    });
-  }
-
-  // 1. Submit Courier Transaction
-  const formCourier = document.getElementById("form-courier-tx");
-  if (formCourier) {
-    formCourier.addEventListener("submit", async (e) => {
+  // 1. Submit Inflow (Remittance Received)
+  const formInflow = document.getElementById("form-inflow");
+  if (formInflow) {
+    formInflow.addEventListener("submit", async (e) => {
       e.preventDefault();
       const payload = {
-        type: document.getElementById("ctx-type").value,
-        tx_date: document.getElementById("ctx-date").value,
-        courier: document.getElementById("ctx-courier").value,
-        amount: parseFloat(document.getElementById("ctx-amount").value) || 0,
-        reference_note: document.getElementById("ctx-notes").value
+        type: "RECEIVED_FROM_COURIER",
+        tx_date: document.getElementById("inflow-date").value,
+        courier: document.getElementById("inflow-courier").value,
+        amount: parseFloat(document.getElementById("inflow-amount").value) || 0,
+        reference_note: document.getElementById("inflow-notes").value
       };
 
       try {
@@ -487,26 +546,60 @@ function setupEventListeners() {
         });
         const data = await res.json();
         if (data.success) {
-          showToast(`Saved: ${payload.courier} Rs. ${payload.amount}`);
-          document.getElementById("ctx-amount").value = "";
-          document.getElementById("ctx-notes").value = "";
+          showToast(`Remittance Saved: ${payload.courier} Rs. ${payload.amount}`);
+          document.getElementById("inflow-amount").value = "";
+          document.getElementById("inflow-notes").value = "";
+          closeModal("modal-add-inflow");
           loadUnifiedState();
         }
       } catch (err) {
-        showToast("Error saving courier record", "error");
+        showToast("Error saving remittance", "error");
       }
     });
   }
 
-  // 2. Submit Ad Spend
-  const formAds = document.getElementById("form-ad-spend");
-  if (formAds) {
-    formAds.addEventListener("submit", async (e) => {
+  // 2. Submit Courier Fee
+  const formCourierFee = document.getElementById("form-courier-fee");
+  if (formCourierFee) {
+    formCourierFee.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const payload = {
+        type: "PAID_TO_COURIER",
+        tx_date: document.getElementById("cfee-date").value,
+        courier: document.getElementById("cfee-courier").value,
+        amount: parseFloat(document.getElementById("cfee-amount").value) || 0,
+        reference_note: document.getElementById("cfee-notes").value
+      };
+
+      try {
+        const res = await fetch("/api/courier-tx", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Shipping Fee Saved: Rs. ${payload.amount}`);
+          document.getElementById("cfee-amount").value = "";
+          document.getElementById("cfee-notes").value = "";
+          closeModal("modal-add-courier-fee");
+          loadUnifiedState();
+        }
+      } catch (err) {
+        showToast("Error saving fee", "error");
+      }
+    });
+  }
+
+  // 3. Submit Ad Spend
+  const formAdSpend = document.getElementById("form-ad-spend");
+  if (formAdSpend) {
+    formAdSpend.addEventListener("submit", async (e) => {
       e.preventDefault();
       const payload = {
         spend_date: document.getElementById("ad-date").value,
         platform: document.getElementById("ad-platform").value,
-        raw_spend: parseFloat(document.getElementById("ad-raw-amount").value) || 0,
+        raw_spend: parseFloat(document.getElementById("ad-raw").value) || 0,
         bank_tax_percent: 8.0,
         campaign_name: document.getElementById("ad-campaign").value
       };
@@ -519,9 +612,10 @@ function setupEventListeners() {
         });
         const data = await res.json();
         if (data.success) {
-          showToast(`Logged ${payload.platform} (+8% Tax)`);
-          document.getElementById("ad-raw-amount").value = "";
+          showToast(`Ad Spend Logged with 8% Bank Tax`);
+          document.getElementById("ad-raw").value = "";
           document.getElementById("ad-campaign").value = "";
+          closeModal("modal-add-ad-spend");
           loadUnifiedState();
         }
       } catch (err) {
@@ -530,17 +624,17 @@ function setupEventListeners() {
     });
   }
 
-  // 3. Submit Stock Entry
-  const formStock = document.getElementById("form-stock-entry");
+  // 4. Submit Stock Entry
+  const formStock = document.getElementById("form-stock");
   if (formStock) {
     formStock.addEventListener("submit", async (e) => {
       e.preventDefault();
       const payload = {
-        entry_date: document.getElementById("stk-date").value,
-        item_name: document.getElementById("stk-name").value,
-        supplier: document.getElementById("stk-supplier").value,
-        total_cost: parseFloat(document.getElementById("stk-cost").value) || 0,
-        units_count: parseInt(document.getElementById("stk-units").value, 10) || 0
+        entry_date: document.getElementById("stock-date").value,
+        item_name: document.getElementById("stock-name").value,
+        supplier: document.getElementById("stock-supplier").value,
+        total_cost: parseFloat(document.getElementById("stock-cost").value) || 0,
+        units_count: parseInt(document.getElementById("stock-units").value, 10) || 0
       };
 
       try {
@@ -551,11 +645,12 @@ function setupEventListeners() {
         });
         const data = await res.json();
         if (data.success) {
-          showToast(`Stock batch saved!`);
-          document.getElementById("stk-name").value = "";
-          document.getElementById("stk-cost").value = "";
-          document.getElementById("stk-units").value = "";
-          document.getElementById("stk-supplier").value = "";
+          showToast(`Stock Batch Saved`);
+          document.getElementById("stock-name").value = "";
+          document.getElementById("stock-cost").value = "";
+          document.getElementById("stock-units").value = "";
+          document.getElementById("stock-supplier").value = "";
+          closeModal("modal-add-stock");
           loadUnifiedState();
         }
       } catch (err) {
@@ -564,16 +659,16 @@ function setupEventListeners() {
     });
   }
 
-  // 4. Submit Work / Petrol Expense
-  const formWork = document.getElementById("form-work-expense");
-  if (formWork) {
-    formWork.addEventListener("submit", async (e) => {
+  // 5. Submit Other Business Expense
+  const formExpense = document.getElementById("form-expense");
+  if (formExpense) {
+    formExpense.addEventListener("submit", async (e) => {
       e.preventDefault();
       const payload = {
-        expense_date: document.getElementById("work-exp-date").value,
-        category: document.getElementById("work-exp-cat").value,
-        description: document.getElementById("work-exp-desc").value,
-        amount: parseFloat(document.getElementById("work-exp-amt").value) || 0
+        expense_date: document.getElementById("exp-date").value,
+        category: "Other Expense",
+        description: document.getElementById("exp-desc").value,
+        amount: parseFloat(document.getElementById("exp-amount").value) || 0
       };
 
       try {
@@ -584,26 +679,28 @@ function setupEventListeners() {
         });
         const data = await res.json();
         if (data.success) {
-          showToast(`Logged ${payload.category}: Rs. ${payload.amount}`);
-          document.getElementById("work-exp-desc").value = "";
-          document.getElementById("work-exp-amt").value = "";
+          showToast(`Expense Saved: Rs. ${payload.amount}`);
+          document.getElementById("exp-desc").value = "";
+          document.getElementById("exp-amount").value = "";
+          closeModal("modal-add-expense");
           loadUnifiedState();
         }
       } catch (err) {
-        showToast("Error saving work expense", "error");
+        showToast("Error saving expense", "error");
       }
     });
   }
 
-  // 5. Submit Customer Parcel
-  if (formAddOrder) {
-    formAddOrder.addEventListener("submit", async (e) => {
+  // 6. Submit Customer Order
+  const formOrder = document.getElementById("form-order");
+  if (formOrder) {
+    formOrder.addEventListener("submit", async (e) => {
       e.preventDefault();
       const payload = {
-        customer_name: document.getElementById("ord-cust-name").value,
-        customer_city: document.getElementById("ord-cust-city").value,
-        tracking_number: document.getElementById("ord-cust-tracking").value,
-        selling_price: parseFloat(document.getElementById("ord-cust-price").value) || 0
+        customer_name: document.getElementById("ord-name").value,
+        customer_city: document.getElementById("ord-city").value,
+        tracking_number: document.getElementById("ord-tracking").value,
+        selling_price: parseFloat(document.getElementById("ord-price").value) || 0
       };
 
       try {
@@ -614,12 +711,12 @@ function setupEventListeners() {
         });
         const data = await res.json();
         if (data.success) {
-          showToast(`Logged parcel: ${payload.customer_name}`);
-          document.getElementById("ord-cust-name").value = "";
-          document.getElementById("ord-cust-city").value = "";
-          document.getElementById("ord-cust-tracking").value = "";
-          document.getElementById("ord-cust-price").value = "";
-          formAddOrder.classList.add("hidden");
+          showToast(`Customer Order Saved`);
+          document.getElementById("ord-name").value = "";
+          document.getElementById("ord-city").value = "";
+          document.getElementById("ord-tracking").value = "";
+          document.getElementById("ord-price").value = "";
+          closeModal("modal-add-order");
           loadUnifiedState();
         }
       } catch (err) {
@@ -628,17 +725,11 @@ function setupEventListeners() {
     });
   }
 
-  // QR Modal Close
-  const btnCloseQr = document.getElementById("btn-close-qr");
-  const btnDoneQr = document.getElementById("btn-done-qr");
-  if (btnCloseQr) btnCloseQr.addEventListener("click", closeQrModal);
-  if (btnDoneQr) btnDoneQr.addEventListener("click", closeQrModal);
-
   // Reset Clean Slate
   const btnReset = document.getElementById("btn-reset-clean");
   if (btnReset) {
     btnReset.addEventListener("click", async () => {
-      if (confirm("Wipe all records and start from Rs. 0 clean slate?")) {
+      if (confirm("Are you sure you want to wipe all records and start from Rs. 0 clean slate?")) {
         try {
           const res = await fetch("/api/system/reset-clean", { method: "POST" });
           const data = await res.json();

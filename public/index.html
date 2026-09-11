@@ -14,124 +14,386 @@
         extend: {
           colors: {
             brand: {
-              400: '#34d399',
-              500: '#10b981',
-              600: '#059669',
-              700: '#006241'
+              400: '#60a5fa',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8'
             }
           }
         }
       }
     }
   </script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <link rel="stylesheet" href="styles.css">
 </head>
-<body class="selection:bg-[#10b981] selection:text-white p-3 sm:p-5 md:p-8">
+<body class="selection:bg-blue-600 selection:text-white flex min-h-screen">
 
-  <!-- FLUID RUNNING GRADIENT MESH BACKGROUND -->
-  <div class="gradient-mesh-bg">
-    <div class="gradient-orb orb-1"></div>
-    <div class="gradient-orb orb-2"></div>
-    <div class="gradient-orb orb-3"></div>
+  <!-- DYNAMIC AMBIENT RUNNING GRADIENT BACKGROUND -->
+  <div class="ambient-bg">
+    <div class="ambient-orb orb-blue"></div>
+    <div class="ambient-orb orb-emerald"></div>
   </div>
-  <div class="grid-overlay"></div>
 
-  <!-- MAIN UNIFIED SHELL -->
-  <div class="max-w-6xl mx-auto revtap-shell p-4 sm:p-6 md:p-8 space-y-6">
-
-    <!-- ======================================================================= -->
-    <!-- 1. TOP HEADER -->
-    <!-- ======================================================================= -->
-    <header class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-white/[0.08]">
+  <!-- ========================================================================= -->
+  <!-- 1. LEFT SIDEBAR (FINPAY STYLE) -->
+  <!-- ========================================================================= -->
+  <aside class="w-64 bg-[#0c1326]/90 backdrop-blur-2xl border-r border-white/[0.08] p-5 hidden lg:flex flex-col justify-between shrink-0 fixed top-0 bottom-0 left-0 z-30">
+    
+    <div class="space-y-6">
       
-      <!-- Brand Logo & Identity -->
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#006241] via-[#059669] to-[#10b981] flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-emerald-950/60 border border-white/20">
-          <i data-lucide="zap" class="w-5 h-5 text-white"></i>
+      <!-- Logo -->
+      <div class="flex items-center gap-3 px-2">
+        <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold shadow-lg shadow-blue-600/40">
+          <i data-lucide="zap" class="w-5 h-5"></i>
         </div>
         <div>
-          <div class="flex items-center gap-2">
-            <span class="font-bold text-xl text-white">RevTap</span>
-            <span class="px-2 py-0.5 text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full">v2.0</span>
-          </div>
-          <span class="text-xs text-slate-400 block font-normal">Mustafa • E-Commerce Pakistan</span>
+          <span class="font-bold text-lg text-white block leading-tight">RevTap</span>
+          <span class="text-[10px] text-slate-400">Financial Hub</span>
         </div>
       </div>
 
-      <!-- Center Auto-Save Badge -->
-      <div class="hidden md:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.04] border border-white/10 text-xs text-slate-300">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span id="txt-autosave-status" class="font-mono text-emerald-400 text-xs font-semibold">Auto-Saved</span>
+      <!-- Main Navigation Menu -->
+      <div class="space-y-1">
+        <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 px-3 block mb-2">Main Menu</span>
+        
+        <button onclick="switchView('dashboard')" id="nav-btn-dashboard" class="nav-item active w-full">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+          <span>Dashboard</span>
+        </button>
+
+        <button onclick="switchView('transactions')" id="nav-btn-transactions" class="nav-item w-full">
+          <i data-lucide="receipt" class="w-4 h-4"></i>
+          <span>Transactions</span>
+        </button>
+
+        <button onclick="switchView('orders')" id="nav-btn-orders" class="nav-item w-full">
+          <i data-lucide="package" class="w-4 h-4"></i>
+          <span>Orders & COD</span>
+        </button>
+
+        <button onclick="openQrModal()" class="nav-item w-full">
+          <i data-lucide="smartphone" class="w-4 h-4 text-emerald-400"></i>
+          <span>Mobile Phone Sync</span>
+        </button>
       </div>
 
-      <!-- Action Buttons -->
+      <!-- Quick Add Actions Dropdown / Hub -->
+      <div class="pt-4 border-t border-white/[0.06] space-y-2">
+        <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 px-3 block">Quick Actions</span>
+        
+        <button onclick="openModal('modal-add-inflow')" class="w-full py-2.5 px-3 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-semibold flex items-center gap-2 transition">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          <span>+ Remittance Received</span>
+        </button>
+
+        <button onclick="openModal('modal-add-expense')" class="w-full py-2.5 px-3 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 text-xs font-semibold flex items-center gap-2 transition">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          <span>+ Other Expense</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Bottom User Profile Card -->
+    <div class="p-3 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-500/50 flex items-center justify-center font-bold text-xs text-blue-300">
+          M
+        </div>
+        <div class="text-left">
+          <span class="text-xs font-bold text-white block">Mustafa</span>
+          <span class="text-[10px] text-slate-400 block -mt-0.5">RevTap Owner</span>
+        </div>
+      </div>
+      <button onclick="openQrModal()" title="Mobile Connect" class="text-slate-400 hover:text-emerald-400 transition p-1">
+        <i data-lucide="qr-code" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+  </aside>
+
+  <!-- ========================================================================= -->
+  <!-- 2. MAIN APPLICATION WORKSPACE -->
+  <!-- ========================================================================= -->
+  <main class="flex-1 lg:pl-64 p-3 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
+
+    <!-- Top Bar -->
+    <header class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-white/[0.08]">
+      
+      <!-- Greeting Header -->
+      <div class="flex items-center gap-3">
+        <!-- Mobile Sidebar Menu Toggle Button -->
+        <button onclick="toggleMobileMenu()" class="p-2 rounded-xl bg-white/[0.06] border border-white/10 text-white lg:hidden">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+
+        <div>
+          <h1 class="text-lg sm:text-xl font-bold text-white">Hey Mustafa, Welcome back! 🚀</h1>
+          <p class="text-xs text-slate-400">All financial calculations are updated and auto-saved in real-time.</p>
+        </div>
+      </div>
+
+      <!-- Right Header Status & Tools -->
       <div class="flex items-center gap-2">
-        <button onclick="copySummary()" title="Copy Profit Summary to Clipboard" class="px-3 py-2 rounded-xl bg-white/[0.05] hover:bg-white/10 border border-white/10 text-slate-200 text-xs font-medium flex items-center gap-1.5 transition active:scale-95">
-          <i data-lucide="copy" class="w-4 h-4 text-emerald-400"></i>
-          <span class="hidden sm:inline">Copy Report</span>
+        
+        <!-- Auto-Save Pulse -->
+        <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/10 text-xs text-slate-300">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="txt-autosave-status" class="font-mono text-emerald-400 text-[11px] font-semibold">Auto-Saved</span>
+        </div>
+
+        <!-- Copy Summary Report -->
+        <button onclick="copySummary()" title="Copy Profit Report" class="p-2 rounded-xl bg-white/[0.05] hover:bg-white/10 border border-white/10 text-slate-300 text-xs font-medium flex items-center gap-1.5 transition">
+          <i data-lucide="copy" class="w-4 h-4 text-blue-400"></i>
+          <span class="hidden md:inline">Copy Report</span>
         </button>
 
-        <button onclick="openQrModal()" title="Open on Mobile Phone" class="px-3 py-2 rounded-xl bg-white/[0.05] hover:bg-white/10 border border-white/10 text-slate-200 text-xs font-medium flex items-center gap-1.5 transition active:scale-95">
+        <!-- Mobile Phone Sync -->
+        <button onclick="openQrModal()" title="Connect Mobile Phone" class="p-2 rounded-xl bg-white/[0.05] hover:bg-white/10 border border-white/10 text-slate-300 text-xs font-medium flex items-center gap-1.5 transition">
           <i data-lucide="smartphone" class="w-4 h-4 text-emerald-400"></i>
-          <span class="hidden sm:inline">Mobile QR</span>
+          <span class="hidden md:inline">Mobile QR</span>
         </button>
 
-        <button id="btn-reset-clean" title="Wipe Data to 0 Fresh Slate" class="p-2 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/50 text-rose-300 text-xs transition active:scale-95">
+        <!-- Reset Slate -->
+        <button id="btn-reset-clean" title="Wipe Data to 0 Fresh Slate" class="p-2 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/50 text-rose-300 transition">
           <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
         </button>
+
       </div>
 
     </header>
 
     <!-- ======================================================================= -->
-    <!-- 2. MASTER P&L HERO CARD -->
+    <!-- VIEW 1: MAIN DASHBOARD OVERVIEW (MATCHES FINPAY SCREENSHOT) -->
     <!-- ======================================================================= -->
-    <div class="revtap-card p-5 sm:p-7 relative overflow-hidden">
-      
-      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-        
-        <!-- Left: Net Cash Display -->
-        <div class="space-y-2">
-          <div class="flex items-center gap-2">
-            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wide">REALIZED NET CASH IN POCKET (PKR)</span>
-            <span id="hero-status-pill" class="pill-badge-green">● In Profit</span>
-          </div>
+    <div id="view-dashboard" class="space-y-6">
 
-          <div class="flex items-baseline gap-3">
-            <span id="hero-net-profit" class="text-3xl sm:text-5xl font-bold font-mono text-white tracking-normal">
-              Rs. 0
-            </span>
+      <!-- TOP ROW: HERO VISA CARD + 3 STAT CARDS (EXACT MATCH TO FINPAY TOP ROW) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+        
+        <!-- Left: Blue FinPay Visa Card (Net Cash Pocket Profit) -->
+        <div class="lg:col-span-4">
+          <div class="finpay-visa-card h-full flex flex-col justify-between min-h-[170px]">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-[11px] font-semibold uppercase tracking-wider text-blue-200 block">RevTap Commerce OS</span>
+                <span class="text-xs font-mono text-blue-100 tracking-widest mt-0.5 block">2243 •••• •••• 9982</span>
+              </div>
+              <div class="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center border border-white/30">
+                <i data-lucide="wifi" class="w-4 h-4 text-white rotate-90"></i>
+              </div>
+            </div>
+
+            <div class="mt-4">
+              <span class="text-[11px] font-medium text-blue-200 block">Available Pocket Profit</span>
+              <div class="flex items-baseline justify-between gap-2 mt-1">
+                <span id="hero-net-profit" class="text-3xl sm:text-4xl font-bold font-mono text-white tracking-normal">
+                  Rs. 0
+                </span>
+                <span id="hero-status-pill" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 border border-white/30 text-white">
+                  ● Live Profit
+                </span>
+              </div>
+            </div>
           </div>
-          <p class="text-xs text-slate-400 font-normal">
-            Calculated as: <span class="text-emerald-400 font-medium">Bank Remittances Received</span> minus all courier fees, ad spend with tax, stock costs & petrol expenses.
-          </p>
         </div>
 
-        <!-- Right: 4 Interactive Summary Cards -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <!-- Right: 3 Metric Cards (Matching Total Income, Total Expenses, Total Savings) -->
+        <div class="lg:col-span-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
           
-          <div class="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-700/40 text-left">
-            <span class="text-[11px] font-medium text-emerald-300 block">Courier Cash Got</span>
-            <span id="snap-courier-got" class="text-base sm:text-lg font-bold font-mono text-white mt-1 block">Rs. 0</span>
+          <!-- Card 1: Total Inflow (Courier Remittances Received) -->
+          <div class="fin-card p-5 flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-400">Total Courier Cash In</span>
+              <div class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                <i data-lucide="arrow-down-left" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <div class="mt-3">
+              <span id="stat-total-inflow" class="text-2xl font-bold font-mono text-white block">Rs. 0</span>
+              <span class="text-[11px] text-emerald-400 font-semibold mt-1 inline-flex items-center gap-1">
+                <i data-lucide="trending-up" class="w-3 h-3"></i> Bank Remittances
+              </span>
+            </div>
           </div>
 
-          <div class="p-3.5 rounded-xl bg-amber-950/30 border border-amber-700/40 text-left">
-            <span class="text-[11px] font-medium text-amber-300 block">Courier Paid</span>
-            <span id="snap-courier-paid" class="text-base sm:text-lg font-bold font-mono text-amber-200 mt-1 block">Rs. 0</span>
+          <!-- Card 2: Total Sunk Expenses & Outflow -->
+          <div class="fin-card p-5 flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-400">Total Outflow & Cost</span>
+              <div class="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+                <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <div class="mt-3">
+              <span id="stat-total-outflow" class="text-2xl font-bold font-mono text-rose-300 block">Rs. 0</span>
+              <span class="text-[11px] text-rose-400 font-semibold mt-1 inline-flex items-center gap-1">
+                Ads + Sourcing + Expenses
+              </span>
+            </div>
           </div>
 
-          <div class="p-3.5 rounded-xl bg-sky-950/30 border border-sky-700/40 text-left">
-            <span class="text-[11px] font-medium text-sky-300 block">Ad Spend (+8% Tax)</span>
-            <span id="snap-ads-total" class="text-base sm:text-lg font-bold font-mono text-sky-200 mt-1 block">Rs. 0</span>
+          <!-- Card 3: Pending Courier Pipeline -->
+          <div class="fin-card p-5 flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-400">Pending with Couriers</span>
+              <div class="w-8 h-8 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+                <i data-lucide="truck" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <div class="mt-3">
+              <span id="stat-pending-courier" class="text-2xl font-bold font-mono text-sky-200 block">Rs. 0</span>
+              <span class="text-[11px] text-sky-400 font-semibold mt-1 inline-flex items-center gap-1">
+                COD In-Transit / Pipeline
+              </span>
+            </div>
           </div>
 
-          <div class="p-3.5 rounded-xl bg-rose-950/30 border border-rose-700/40 text-left">
-            <span class="text-[11px] font-medium text-rose-300 block">Petrol & Expenses</span>
-            <span id="snap-expenses-total" class="text-base sm:text-lg font-bold font-mono text-rose-200 mt-1 block">Rs. 0</span>
+        </div>
+
+      </div>
+
+      <!-- MIDDLE ROW: MONEY STATISTICS DUAL BAR CHART + EXPENSE DONUT (MATCHES SCREENSHOT) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        
+        <!-- Left: Money Statistics & Quick Action Buttons -->
+        <div class="lg:col-span-8 fin-card p-5 sm:p-6 space-y-5">
+          
+          <!-- Chart Header & Action Icons Bar -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.06] pb-4">
+            <div>
+              <span class="text-xs font-semibold text-slate-400">Money Statistics</span>
+              <h3 class="text-xl sm:text-2xl font-bold font-mono text-white" id="disp-stat-balance">Rs. 0</h3>
+            </div>
+
+            <!-- Quick Action 5 Action Buttons (Matching Screenshot) -->
+            <div class="flex items-center gap-3 overflow-x-auto pb-1 sm:pb-0">
+              <div onclick="openModal('modal-add-inflow')" class="action-btn-circle" title="Log Courier Remittance Received">
+                <div class="circle-icon-box bg-emerald-500/10 border-emerald-500/30 text-emerald-400">
+                  <i data-lucide="arrow-down-left" class="w-5 h-5"></i>
+                </div>
+                <span class="text-[10px] text-slate-300 font-medium">Received</span>
+              </div>
+
+              <div onclick="openModal('modal-add-courier-fee')" class="action-btn-circle" title="Log Courier Shipping Paid">
+                <div class="circle-icon-box bg-amber-500/10 border-amber-500/30 text-amber-300">
+                  <i data-lucide="truck" class="w-5 h-5"></i>
+                </div>
+                <span class="text-[10px] text-slate-300 font-medium">Shipping</span>
+              </div>
+
+              <div onclick="openModal('modal-add-ad-spend')" class="action-btn-circle" title="Log Meta/TikTok Ad Spend">
+                <div class="circle-icon-box bg-sky-500/10 border-sky-500/30 text-sky-400">
+                  <i data-lucide="megaphone" class="w-5 h-5"></i>
+                </div>
+                <span class="text-[10px] text-slate-300 font-medium">Ads (+8%)</span>
+              </div>
+
+              <div onclick="openModal('modal-add-stock')" class="action-btn-circle" title="Log Wholesale Stock Sourcing">
+                <div class="circle-icon-box bg-purple-500/10 border-purple-500/30 text-purple-400">
+                  <i data-lucide="boxes" class="w-5 h-5"></i>
+                </div>
+                <span class="text-[10px] text-slate-300 font-medium">Stock</span>
+              </div>
+
+              <div onclick="openModal('modal-add-expense')" class="action-btn-circle" title="Log Other Business Expense">
+                <div class="circle-icon-box bg-rose-500/10 border-rose-500/30 text-rose-400">
+                  <i data-lucide="receipt" class="w-5 h-5"></i>
+                </div>
+                <span class="text-[10px] text-slate-300 font-medium">Other Exp</span>
+              </div>
+            </div>
           </div>
 
+          <!-- Dual Color Bar Chart -->
+          <div class="h-60 w-full relative">
+            <canvas id="chartMoneyStats"></canvas>
+          </div>
+
+        </div>
+
+        <!-- Right: Expense Distribution Donut Card (Matching Screenshot Statistics) -->
+        <div class="lg:col-span-4 fin-card p-5 sm:p-6 space-y-4 flex flex-col justify-between">
+          <div class="flex items-center justify-between border-b border-white/[0.06] pb-3">
+            <div>
+              <span class="text-xs font-semibold text-slate-400">Cost Breakdown</span>
+              <h3 class="text-base font-bold text-white">Expense Share</h3>
+            </div>
+            <span class="text-[11px] font-semibold text-slate-400">All-Time</span>
+          </div>
+
+          <!-- Donut Chart Container with Center Total -->
+          <div class="h-44 w-full relative flex items-center justify-center">
+            <canvas id="chartExpenseDonut"></canvas>
+          </div>
+
+          <!-- Legend Rows -->
+          <div class="space-y-2 text-xs font-medium">
+            <div class="flex items-center justify-between text-slate-300">
+              <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span> Ad Spend (8% Tax)</span>
+              <span id="leg-ads-amt" class="font-mono font-bold text-white">Rs. 0</span>
+            </div>
+            <div class="flex items-center justify-between text-slate-300">
+              <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-purple-400"></span> Stock Sourcing</span>
+              <span id="leg-stock-amt" class="font-mono font-bold text-white">Rs. 0</span>
+            </div>
+            <div class="flex items-center justify-between text-slate-300">
+              <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Courier Fees Paid</span>
+              <span id="leg-courier-amt" class="font-mono font-bold text-white">Rs. 0</span>
+            </div>
+            <div class="flex items-center justify-between text-slate-300">
+              <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span> Other Expenses</span>
+              <span id="leg-exp-amt" class="font-mono font-bold text-white">Rs. 0</span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- BOTTOM ROW: RECENT TRANSACTIONS TABLE (MATCHES FINPAY SCREENSHOT) -->
+      <div class="fin-card p-5 sm:p-6 space-y-4">
+        
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] pb-3">
+          <div>
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <i data-lucide="receipt" class="w-4 h-4 text-blue-400"></i>
+              Recent Transactions
+            </h3>
+            <p class="text-xs text-slate-400">Every single payment received and expense logged with exact dates & timestamps.</p>
+          </div>
+
+          <!-- Category Filter Tabs -->
+          <div class="flex items-center gap-1 bg-white/[0.04] p-1 rounded-xl text-xs font-medium border border-white/10">
+            <button onclick="filterRecentTx('all')" class="tx-filter-btn active px-3 py-1 rounded-lg bg-blue-600 text-white transition">All</button>
+            <button onclick="filterRecentTx('income')" class="tx-filter-btn px-3 py-1 rounded-lg text-slate-400 hover:text-white transition">Received 📥</button>
+            <button onclick="filterRecentTx('ads')" class="tx-filter-btn px-3 py-1 rounded-lg text-slate-400 hover:text-white transition">Ads 📢</button>
+            <button onclick="filterRecentTx('stock')" class="tx-filter-btn px-3 py-1 rounded-lg text-slate-400 hover:text-white transition">Stock 🏷️</button>
+            <button onclick="filterRecentTx('expenses')" class="tx-filter-btn px-3 py-1 rounded-lg text-slate-400 hover:text-white transition">Other 💼</button>
+          </div>
+        </div>
+
+        <!-- Transactions Table -->
+        <div class="overflow-x-auto max-h-72 overflow-y-auto border border-white/[0.06] rounded-xl">
+          <table class="w-full text-left text-xs">
+            <thead class="text-slate-400 font-medium bg-white/[0.02] border-b border-white/[0.06] text-[11px]">
+              <tr>
+                <th class="py-2.5 px-3">Transaction Name</th>
+                <th class="py-2.5 px-3">Date & Time</th>
+                <th class="py-2.5 px-3">Notes / Ref</th>
+                <th class="py-2.5 px-3 text-right">Amount (PKR)</th>
+                <th class="py-2.5 px-3 text-center">Status</th>
+                <th class="py-2.5 px-3 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody id="recent-tx-tbody" class="divide-y divide-white/[0.04]">
+              <!-- Rendered dynamically by JS -->
+            </tbody>
+          </table>
         </div>
 
       </div>
@@ -139,370 +401,378 @@
     </div>
 
     <!-- ======================================================================= -->
-    <!-- 3. CORE COMMAND HUBS (2X2 RESPONSIVE GRID) -->
+    <!-- VIEW 2: TRANSACTIONS FULL LEDGER PAGE -->
     <!-- ======================================================================= -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-      <!-- ===================================================================== -->
-      <!-- HUB 1: COURIER CASH MANAGER -->
-      <!-- ===================================================================== -->
-      <div class="revtap-card p-4 sm:p-6 space-y-4">
-        
-        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.08] pb-3">
+    <div id="view-transactions" class="hidden space-y-5">
+      <div class="fin-card p-6 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] pb-3">
           <div>
-            <h3 class="text-sm font-bold text-white flex items-center gap-2">
-              <i data-lucide="truck" class="w-4 h-4 text-amber-400"></i>
-              Courier Cash Manager
-            </h3>
-            <p class="text-xs text-slate-400">Log dispatch fees paid or bank remittances received.</p>
+            <h2 class="text-lg font-bold text-white">Full Financial Transaction Stream</h2>
+            <p class="text-xs text-slate-400">Complete audit log of all money received and spent across RevTap.</p>
           </div>
-
-          <!-- Tab Switcher -->
-          <div class="flex items-center gap-1 bg-white/[0.05] p-1 rounded-xl text-xs font-semibold border border-white/10">
-            <button type="button" id="tab-btn-courier-paid" class="px-2.5 py-1 rounded-lg bg-amber-600 text-white transition">Paid Fee</button>
-            <button type="button" id="tab-btn-courier-recv" class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition">Received Cash</button>
-          </div>
-        </div>
-
-        <form id="form-courier-tx" class="space-y-3">
-          <input type="hidden" id="ctx-type" value="PAID_TO_COURIER">
-
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            <div>
-              <label class="block text-[11px] font-medium text-slate-400 mb-1">Date</label>
-              <input type="date" id="ctx-date" required class="clean-input w-full px-3 py-2 text-xs">
-            </div>
-
-            <div>
-              <label class="block text-[11px] font-medium text-slate-400 mb-1">Courier Partner</label>
-              <select id="ctx-courier" class="clean-input w-full px-3 py-2 text-xs font-medium text-white">
-                <option value="PostEx">PostEx</option>
-                <option value="Trax">Trax Logistics</option>
-                <option value="Leopards">Leopards Courier</option>
-                <option value="Call Courier">Call Courier</option>
-                <option value="TCS">TCS</option>
-                <option value="Rider">Rider</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-
-            <div>
-              <label id="ctx-amount-label" class="block text-[11px] font-semibold text-amber-300 mb-1">Amount (Rs.) *</label>
-              <input type="number" id="ctx-amount" required min="1" step="50" placeholder="e.g. 1500" class="clean-input w-full px-3 py-2 text-xs font-mono font-bold">
-            </div>
-          </div>
-
-          <div class="flex flex-col sm:flex-row gap-2">
-            <input type="text" id="ctx-notes" placeholder="Notes (e.g. 10 parcels dispatched or COD batch #)" class="clean-input flex-1 px-3 py-2 text-xs">
-            <button type="submit" id="btn-submit-courier-tx" class="py-2.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs shadow transition flex items-center justify-center gap-1.5">
-              <i data-lucide="plus" class="w-4 h-4"></i>
-              <span>Save Record</span>
-            </button>
-          </div>
-        </form>
-
-        <!-- Ledger Table -->
-        <div class="overflow-x-auto max-h-48 overflow-y-auto border border-white/[0.06] rounded-xl">
-          <table class="w-full text-left text-xs">
-            <thead class="text-slate-400 font-medium bg-white/[0.02] border-b border-white/[0.06] text-[11px]">
-              <tr>
-                <th class="py-2 px-2.5">Date</th>
-                <th class="py-2 px-2">Type</th>
-                <th class="py-2 px-2">Courier</th>
-                <th class="py-2 px-2 text-right">Amount</th>
-                <th class="py-2 px-2 text-center">Del</th>
-              </tr>
-            </thead>
-            <tbody id="courier-tx-tbody" class="divide-y divide-white/[0.04]">
-              <!-- Injected by JS -->
-            </tbody>
-          </table>
-        </div>
-
-      </div>
-
-      <!-- ===================================================================== -->
-      <!-- HUB 2: AD SPEND EXPENSES -->
-      <!-- ===================================================================== -->
-      <div class="revtap-card p-4 sm:p-6 space-y-4">
-        
-        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.08] pb-3">
-          <div>
-            <h3 class="text-sm font-bold text-white flex items-center gap-2">
-              <i data-lucide="megaphone" class="w-4 h-4 text-sky-400"></i>
-              Ad Spend Expenses
-            </h3>
-            <p class="text-xs text-slate-400">Applies the 8% Pakistani bank card tax automatically.</p>
-          </div>
-          <span id="disp-ad-spend-sum" class="text-xs font-mono font-semibold text-sky-300 bg-sky-950/60 px-2.5 py-1 rounded-lg border border-sky-800/60">
-            Total: Rs. 0
-          </span>
-        </div>
-
-        <form id="form-ad-spend" class="space-y-3">
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            <div>
-              <label class="block text-[11px] font-medium text-slate-400 mb-1">Spend Date</label>
-              <input type="date" id="ad-date" required class="clean-input w-full px-3 py-2 text-xs">
-            </div>
-
-            <div>
-              <label class="block text-[11px] font-medium text-slate-400 mb-1">Platform</label>
-              <select id="ad-platform" class="clean-input w-full px-3 py-2 text-xs font-medium text-white">
-                <option value="Meta Ads">Meta Ads (FB/Insta)</option>
-                <option value="TikTok Ads">TikTok Ads</option>
-                <option value="Google Ads">Google Ads</option>
-                <option value="Other">Other Marketing</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="block text-[11px] font-semibold text-sky-300 mb-1">Raw Spend (Rs.) *</label>
-              <input type="number" id="ad-raw-amount" required min="1" step="100" placeholder="e.g. 5000" class="clean-input w-full px-3 py-2 text-xs font-mono font-bold">
-            </div>
-          </div>
-
-          <div class="flex flex-col sm:flex-row gap-2">
-            <input type="text" id="ad-campaign" placeholder="Campaign / Product Name" class="clean-input flex-1 px-3 py-2 text-xs">
-            <button type="submit" class="py-2.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs shadow transition flex items-center justify-center gap-1.5">
-              <i data-lucide="plus" class="w-4 h-4"></i>
-              <span>Log Ad Spend</span>
-            </button>
-          </div>
-        </form>
-
-        <div class="overflow-x-auto max-h-48 overflow-y-auto border border-white/[0.06] rounded-xl">
-          <table class="w-full text-left text-xs">
-            <thead class="text-slate-400 font-medium bg-white/[0.02] border-b border-white/[0.06] text-[11px]">
-              <tr>
-                <th class="py-2 px-2.5">Date</th>
-                <th class="py-2 px-2">Platform</th>
-                <th class="py-2 px-2">Campaign</th>
-                <th class="py-2 px-2 text-right">With 8% Tax</th>
-                <th class="py-2 px-2 text-center">Del</th>
-              </tr>
-            </thead>
-            <tbody id="ad-spend-tbody" class="divide-y divide-white/[0.04]">
-              <!-- Injected by JS -->
-            </tbody>
-          </table>
-        </div>
-
-      </div>
-
-      <!-- ===================================================================== -->
-      <!-- HUB 3: STOCK & WHOLESALE SOURCING -->
-      <!-- ===================================================================== -->
-      <div class="revtap-card p-4 sm:p-6 space-y-4">
-        
-        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.08] pb-3">
-          <div>
-            <h3 class="text-sm font-bold text-white flex items-center gap-2">
-              <i data-lucide="package" class="w-4 h-4 text-emerald-400"></i>
-              Stock / Sourcing Costs
-            </h3>
-            <p class="text-xs text-slate-400">Log wholesale inventory batch purchases.</p>
-          </div>
-          <span id="disp-stock-sum" class="text-xs font-mono font-semibold text-emerald-300 bg-emerald-950/60 px-2.5 py-1 rounded-lg border border-emerald-800/60">
-            Total Sourced: Rs. 0
-          </span>
-        </div>
-
-        <form id="form-stock-entry" class="space-y-3">
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            <div>
-              <label class="block text-[11px] font-medium text-slate-400 mb-1">Purchase Date</label>
-              <input type="date" id="stk-date" required class="clean-input w-full px-3 py-2 text-xs">
-            </div>
-
-            <div>
-              <label class="block text-[11px] font-medium text-slate-400 mb-1">Batch / Item Name *</label>
-              <input type="text" id="stk-name" required placeholder="e.g. 50x Smart Watch" class="clean-input w-full px-3 py-2 text-xs">
-            </div>
-
-            <div>
-              <label class="block text-[11px] font-semibold text-emerald-300 mb-1">Total Bill (Rs.) *</label>
-              <input type="number" id="stk-cost" required min="1" step="100" placeholder="e.g. 20000" class="clean-input w-full px-3 py-2 text-xs font-mono font-bold">
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
-            <div class="sm:col-span-4">
-              <input type="number" id="stk-units" placeholder="Units (e.g. 50)" class="clean-input w-full px-3 py-2 text-xs">
-            </div>
-            <div class="sm:col-span-5">
-              <input type="text" id="stk-supplier" placeholder="Supplier / Market" class="clean-input w-full px-3 py-2 text-xs">
-            </div>
-            <div class="sm:col-span-3">
-              <button type="submit" class="w-full py-2.5 px-3 rounded-xl btn-emerald text-white font-semibold text-xs transition flex items-center justify-center gap-1">
-                <i data-lucide="plus" class="w-4 h-4"></i>
-                <span>Log Stock</span>
-              </button>
-            </div>
-          </div>
-        </form>
-
-        <div class="overflow-x-auto max-h-48 overflow-y-auto border border-white/[0.06] rounded-xl">
-          <table class="w-full text-left text-xs">
-            <thead class="text-slate-400 font-medium bg-white/[0.02] border-b border-white/[0.06] text-[11px]">
-              <tr>
-                <th class="py-2 px-2.5">Date</th>
-                <th class="py-2 px-2">Batch Item</th>
-                <th class="py-2 px-2">Supplier</th>
-                <th class="py-2 px-2 text-right">Cost</th>
-                <th class="py-2 px-2 text-center">Del</th>
-              </tr>
-            </thead>
-            <tbody id="stock-tbody" class="divide-y divide-white/[0.04]">
-              <!-- Injected by JS -->
-            </tbody>
-          </table>
-        </div>
-
-      </div>
-
-      <!-- ===================================================================== -->
-      <!-- HUB 4: WORK & PETROL EXPENSES -->
-      <!-- ===================================================================== -->
-      <div class="revtap-card p-4 sm:p-6 space-y-4">
-        
-        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.08] pb-3">
-          <div>
-            <h3 class="text-sm font-bold text-white flex items-center gap-2">
-              <i data-lucide="fuel" class="w-4 h-4 text-rose-400"></i>
-              Work & Petrol Expenses
-            </h3>
-            <p class="text-xs text-slate-400">Daily fuel, packaging flyers, SIM packages, etc.</p>
-          </div>
-          <span id="disp-expenses-sum" class="text-xs font-mono font-semibold text-rose-300 bg-rose-950/60 px-2.5 py-1 rounded-lg border border-rose-800/60">
-            Total: Rs. 0
-          </span>
-        </div>
-
-        <form id="form-work-expense" class="space-y-3">
-          
-          <!-- Category Selector -->
-          <div class="flex flex-wrap gap-1.5 items-center">
-            <button type="button" data-cat="Petrol / Fuel ⛽" class="category-pill active">Petrol ⛽</button>
-            <button type="button" data-cat="Packaging Flyers 📦" class="category-pill">Packaging 📦</button>
-            <button type="button" data-cat="SIMs & Calls 📱" class="category-pill">SIMs 📱</button>
-            <button type="button" data-cat="Food / Chai ☕" class="category-pill">Food / Chai ☕</button>
-            <button type="button" data-cat="Shopify / Tools 💻" class="category-pill">Tools 💻</button>
-            <button type="button" data-cat="Other Work 💼" class="category-pill">Other 💼</button>
-          </div>
-
-          <input type="hidden" id="work-exp-cat" value="Petrol / Fuel ⛽">
-
-          <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
-            <div class="sm:col-span-3">
-              <input type="date" id="work-exp-date" required class="clean-input w-full px-3 py-2 text-xs">
-            </div>
-            <div class="sm:col-span-6">
-              <input type="text" id="work-exp-desc" required placeholder="e.g. 5L petrol for dispatch" class="clean-input w-full px-3 py-2 text-xs">
-            </div>
-            <div class="sm:col-span-3">
-              <input type="number" id="work-exp-amt" required min="1" step="50" placeholder="Rs. Amount" class="clean-input w-full px-3 py-2 text-xs font-mono font-bold">
-            </div>
-          </div>
-
-          <button type="submit" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-rose-700 to-rose-600 hover:from-rose-600 hover:to-rose-500 text-white font-semibold text-xs shadow transition flex items-center justify-center gap-1.5">
-            <i data-lucide="plus" class="w-4 h-4"></i>
-            <span>Add Expense</span>
+          <button onclick="switchView('dashboard')" class="px-3.5 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/10 text-xs font-semibold text-slate-200 border border-white/10 flex items-center gap-1.5 transition">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>Back to Dashboard</span>
           </button>
-        </form>
+        </div>
 
-        <div class="overflow-x-auto max-h-48 overflow-y-auto border border-white/[0.06] rounded-xl">
+        <div class="overflow-x-auto max-h-[500px] overflow-y-auto border border-white/[0.06] rounded-xl">
           <table class="w-full text-left text-xs">
             <thead class="text-slate-400 font-medium bg-white/[0.02] border-b border-white/[0.06] text-[11px]">
               <tr>
-                <th class="py-2 px-2.5">Date</th>
-                <th class="py-2 px-2">Category</th>
-                <th class="py-2 px-2">Description</th>
-                <th class="py-2 px-2 text-right">Amount</th>
-                <th class="py-2 px-2 text-center">Del</th>
+                <th class="py-2.5 px-3">ID & Type</th>
+                <th class="py-2.5 px-3">Transaction Details</th>
+                <th class="py-2.5 px-3">Date</th>
+                <th class="py-2.5 px-3">Notes</th>
+                <th class="py-2.5 px-3 text-right">Amount (PKR)</th>
+                <th class="py-2.5 px-3 text-center">Status</th>
+                <th class="py-2.5 px-3 text-center">Delete</th>
               </tr>
             </thead>
-            <tbody id="work-exp-tbody" class="divide-y divide-white/[0.04]">
-              <!-- Injected by JS -->
+            <tbody id="full-tx-tbody" class="divide-y divide-white/[0.04]">
+              <!-- Rendered via JS -->
             </tbody>
           </table>
         </div>
-
       </div>
-
     </div>
 
     <!-- ======================================================================= -->
-    <!-- 4. CUSTOMER PARCELS LOG -->
+    <!-- VIEW 3: ORDERS & COD PARCELS -->
     <!-- ======================================================================= -->
-    <div class="revtap-card p-4 sm:p-6 space-y-4">
-      
-      <div class="flex items-center justify-between border-b border-white/[0.08] pb-3">
-        <div>
-          <h3 class="text-sm font-bold text-white flex items-center gap-2">
-            <i data-lucide="layers" class="w-4 h-4 text-cyan-400"></i>
-            Customer Parcels & Dispatches
-          </h3>
-          <p class="text-xs text-slate-400">Click any parcel status to toggle between In Transit, Delivered, and Returned!</p>
+    <div id="view-orders" class="hidden space-y-5">
+      <div class="fin-card p-6 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] pb-3">
+          <div>
+            <h2 class="text-lg font-bold text-white">Customer Orders & COD Parcels</h2>
+            <p class="text-xs text-slate-400">Click any parcel status to toggle between In Transit, Delivered, and Returned.</p>
+          </div>
+          <button onclick="openModal('modal-add-order')" class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow flex items-center gap-1.5 transition">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>+ Log Customer Parcel</span>
+          </button>
         </div>
-        <button id="btn-toggle-add-order" class="px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/10 text-xs font-semibold text-slate-200 border border-white/10 flex items-center gap-1.5 transition">
-          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-          <span>+ Log Parcel</span>
+
+        <div class="overflow-x-auto max-h-[500px] overflow-y-auto border border-white/[0.06] rounded-xl">
+          <table class="w-full text-left text-xs">
+            <thead class="text-slate-400 font-medium bg-white/[0.02] border-b border-white/[0.06] text-[11px]">
+              <tr>
+                <th class="py-2.5 px-3">Order ID & Date</th>
+                <th class="py-2.5 px-3">Customer & City</th>
+                <th class="py-2.5 px-3">Tracking #</th>
+                <th class="py-2.5 px-3 text-right">Selling Price</th>
+                <th class="py-2.5 px-3 text-center">Status</th>
+                <th class="py-2.5 px-3 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody id="orders-full-tbody" class="divide-y divide-white/[0.04]">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: 1. LOG COURIER REMITTANCE RECEIVED -->
+  <!-- ========================================================================= -->
+  <div id="modal-add-inflow" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl hidden items-center justify-center p-4">
+    <div class="modal-glass p-6 max-w-md w-full space-y-4">
+      <div class="flex items-center justify-between border-b border-white/10 pb-3">
+        <h3 class="text-sm font-bold text-emerald-400 flex items-center gap-2">
+          <i data-lucide="arrow-down-left" class="w-4 h-4"></i>
+          Log Remittance Received in Bank
+        </h3>
+        <button onclick="closeModal('modal-add-inflow')" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <!-- Add Parcel Form -->
-      <form id="form-add-order" class="hidden p-4 rounded-xl bg-white/[0.02] border border-white/10 grid grid-cols-1 sm:grid-cols-12 gap-2.5">
-        <div class="sm:col-span-3">
-          <input type="text" id="ord-cust-name" required placeholder="Customer Name" class="clean-input w-full px-3 py-2 text-xs">
+      <form id="form-inflow" class="space-y-3">
+        <div>
+          <label class="block text-[11px] font-medium text-slate-400 mb-1">Date Received</label>
+          <input type="date" id="inflow-date" required class="clean-input w-full px-3 py-2 text-xs">
         </div>
-        <div class="sm:col-span-3">
-          <input type="text" id="ord-cust-city" required placeholder="City (e.g. Lahore)" class="clean-input w-full px-3 py-2 text-xs">
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-[11px] font-medium text-slate-400 mb-1">Courier Partner</label>
+            <select id="inflow-courier" class="clean-input w-full px-3 py-2 text-xs text-white">
+              <option value="PostEx">PostEx</option>
+              <option value="Trax">Trax Logistics</option>
+              <option value="Leopards">Leopards</option>
+              <option value="TCS">TCS</option>
+              <option value="Call Courier">Call Courier</option>
+              <option value="Other">Other Bank Transfer</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-emerald-400 mb-1">Amount Received (Rs.) *</label>
+            <input type="number" id="inflow-amount" required min="1" step="50" placeholder="e.g. 15000" class="clean-input w-full px-3 py-2 text-xs font-mono font-bold">
+          </div>
         </div>
-        <div class="sm:col-span-2">
-          <input type="text" id="ord-cust-tracking" placeholder="Tracking # (PE-901)" class="clean-input w-full px-3 py-2 text-xs font-mono">
+
+        <div>
+          <label class="block text-[11px] font-medium text-slate-400 mb-1">Notes / Remittance Batch #</label>
+          <input type="text" id="inflow-notes" placeholder="e.g. Batch #9021 from PostEx" class="clean-input w-full px-3 py-2 text-xs">
         </div>
-        <div class="sm:col-span-2">
-          <input type="number" id="ord-cust-price" required step="50" placeholder="Price (Rs.)" class="clean-input w-full px-3 py-2 text-xs font-mono font-bold">
-        </div>
-        <div class="sm:col-span-2">
-          <button type="submit" class="w-full h-full py-2 rounded-xl btn-emerald text-white font-semibold text-xs shadow">Save</button>
-        </div>
+
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-900/40">
+          Save Remittance
+        </button>
       </form>
-
-      <div class="overflow-x-auto max-h-48 overflow-y-auto border border-white/[0.06] rounded-xl">
-        <table class="w-full text-left text-xs">
-          <thead class="text-slate-400 font-medium bg-white/[0.02] border-b border-white/[0.06] text-[11px]">
-            <tr>
-              <th class="py-2 px-2.5">Order & Date</th>
-              <th class="py-2 px-2">Customer & City</th>
-              <th class="py-2 px-2">Tracking</th>
-              <th class="py-2 px-2 text-right">Selling Price</th>
-              <th class="py-2 px-2 text-center">Status</th>
-              <th class="py-2 px-2 text-center">Del</th>
-            </tr>
-          </thead>
-          <tbody id="orders-tbody" class="divide-y divide-white/[0.04]">
-            <!-- Injected by JS -->
-          </tbody>
-        </table>
-      </div>
-
     </div>
-
   </div>
 
   <!-- ========================================================================= -->
-  <!-- MOBILE QR CONNECT MODAL -->
+  <!-- MODAL: 2. LOG COURIER SHIPPING PAID -->
+  <!-- ========================================================================= -->
+  <div id="modal-add-courier-fee" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl hidden items-center justify-center p-4">
+    <div class="modal-glass p-6 max-w-md w-full space-y-4">
+      <div class="flex items-center justify-between border-b border-white/10 pb-3">
+        <h3 class="text-sm font-bold text-amber-300 flex items-center gap-2">
+          <i data-lucide="truck" class="w-4 h-4"></i>
+          Log Courier Shipping Fee Paid
+        </h3>
+        <button onclick="closeModal('modal-add-courier-fee')" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="form-courier-fee" class="space-y-3">
+        <div>
+          <label class="block text-[11px] font-medium text-slate-400 mb-1">Date Paid</label>
+          <input type="date" id="cfee-date" required class="clean-input w-full px-3 py-2 text-xs">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-[11px] font-medium text-slate-400 mb-1">Courier Partner</label>
+            <select id="cfee-courier" class="clean-input w-full px-3 py-2 text-xs text-white">
+              <option value="PostEx">PostEx</option>
+              <option value="Trax">Trax Logistics</option>
+              <option value="Leopards">Leopards</option>
+              <option value="TCS">TCS</option>
+              <option value="Call Courier">Call Courier</option>
+              <option value="Rider">Rider</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-amber-300 mb-1">Amount Paid (Rs.) *</label>
+            <input type="number" id="cfee-amount" required min="1" step="50" placeholder="e.g. 1200" class="clean-input w-full px-3 py-2 text-xs font-mono font-bold">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-medium text-slate-400 mb-1">Notes / Dispatched Parcels</label>
+          <input type="text" id="cfee-notes" placeholder="e.g. 6 parcels shipping fee at booking" class="clean-input w-full px-3 py-2 text-xs">
+        </div>
+
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-lg shadow-amber-900/40">
+          Save Shipping Fee
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: 3. LOG AD SPEND (+8% BANK TAX) -->
+  <!-- ========================================================================= -->
+  <div id="modal-add-ad-spend" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl hidden items-center justify-center p-4">
+    <div class="modal-glass p-6 max-w-md w-full space-y-4">
+      <div class="flex items-center justify-between border-b border-white/10 pb-3">
+        <div>
+          <h3 class="text-sm font-bold text-sky-400 flex items-center gap-2">
+            <i data-lucide="megaphone" class="w-4 h-4"></i>
+            Log Ad Spend Expenses
+          </h3>
+          <span class="text-[10px] text-slate-400">Automatically adds 8% Pakistani bank card tax</span>
+        </div>
+        <button onclick="closeModal('modal-add-ad-spend')" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="form-ad-spend" class="space-y-3">
+        <div>
+          <label class="block text-[11px] font-medium text-slate-400 mb-1">Date</label>
+          <input type="date" id="ad-date" required class="clean-input w-full px-3 py-2 text-xs">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-[11px] font-medium text-slate-400 mb-1">Platform</label>
+            <select id="ad-platform" class="clean-input w-full px-3 py-2 text-xs text-white">
+              <option value="Meta Ads">Meta Ads (FB/Insta)</option>
+              <option value="TikTok Ads">TikTok Ads</option>
+              <option value="Google Ads">Google Ads</option>
+              <option value="Other">Other Marketing</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-sky-300 mb-1">Raw Spend (Rs.) *</label>
+            <input type="number" id="ad-raw" required min="1" step="100" placeholder="e.g. 5000" class="clean-input w-full px-3 py-2 text-xs font-mono font-bold">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-medium text-slate-400 mb-1">Campaign / Product</label>
+          <input type="text" id="ad-campaign" placeholder="e.g. Advantage+ Shopping / Earbuds" class="clean-input w-full px-3 py-2 text-xs">
+        </div>
+
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow-lg shadow-sky-900/40">
+          Save Ad Spend
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: 4. LOG STOCK SOURCING -->
+  <!-- ========================================================================= -->
+  <div id="modal-add-stock" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl hidden items-center justify-center p-4">
+    <div class="modal-glass p-6 max-w-md w-full space-y-4">
+      <div class="flex items-center justify-between border-b border-white/10 pb-3">
+        <h3 class="text-sm font-bold text-purple-400 flex items-center gap-2">
+          <i data-lucide="boxes" class="w-4 h-4"></i>
+          Log Stock / Inventory Sourcing
+        </h3>
+        <button onclick="closeModal('modal-add-stock')" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="form-stock" class="space-y-3">
+        <div>
+          <label class="block text-[11px] font-medium text-slate-400 mb-1">Date</label>
+          <input type="date" id="stock-date" required class="clean-input w-full px-3 py-2 text-xs">
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-medium text-slate-400 mb-1">Item / Batch Name *</label>
+          <input type="text" id="stock-name" required placeholder="e.g. 50x Smart Watches" class="clean-input w-full px-3 py-2 text-xs">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-[11px] font-semibold text-purple-300 mb-1">Total Bill (Rs.) *</label>
+            <input type="number" id="stock-cost" required min="1" step="100" placeholder="e.g. 25000" class="clean-input w-full px-3 py-2 text-xs font-mono font-bold">
+          </div>
+          <div>
+            <label class="block text-[11px] font-medium text-slate-400 mb-1">Units (Optional)</label>
+            <input type="number" id="stock-units" placeholder="e.g. 50" class="clean-input w-full px-3 py-2 text-xs">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-medium text-slate-400 mb-1">Supplier / Market</label>
+          <input type="text" id="stock-supplier" placeholder="e.g. Shah Alam / Bolton Market" class="clean-input w-full px-3 py-2 text-xs">
+        </div>
+
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-900/40">
+          Save Stock Batch
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: 5. LOG OTHER EXPENSE (CLEAN SINGLE BLOCK AS REQUESTED) -->
+  <!-- ========================================================================= -->
+  <div id="modal-add-expense" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl hidden items-center justify-center p-4">
+    <div class="modal-glass p-6 max-w-md w-full space-y-4">
+      <div class="flex items-center justify-between border-b border-white/10 pb-3">
+        <h3 class="text-sm font-bold text-rose-400 flex items-center gap-2">
+          <i data-lucide="receipt" class="w-4 h-4"></i>
+          Log Other Business Expense
+        </h3>
+        <button onclick="closeModal('modal-add-expense')" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="form-expense" class="space-y-3">
+        <div>
+          <label class="block text-[11px] font-medium text-slate-400 mb-1">Date</label>
+          <input type="date" id="exp-date" required class="clean-input w-full px-3 py-2 text-xs">
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-medium text-slate-400 mb-1">Description / Category *</label>
+          <input type="text" id="exp-desc" required placeholder="e.g. Petrol for dispatch, flyers packaging, tools" class="clean-input w-full px-3 py-2 text-xs">
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold text-rose-300 mb-1">Amount (Rs.) *</label>
+          <input type="number" id="exp-amount" required min="1" step="50" placeholder="e.g. 1500" class="clean-input w-full px-3 py-2 text-xs font-mono font-bold">
+        </div>
+
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-rose-700 to-rose-600 hover:from-rose-600 hover:to-rose-500 text-white font-bold text-xs shadow-lg shadow-rose-950/50">
+          Save Expense
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: 6. LOG CUSTOMER PARCEL -->
+  <!-- ========================================================================= -->
+  <div id="modal-add-order" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl hidden items-center justify-center p-4">
+    <div class="modal-glass p-6 max-w-md w-full space-y-4">
+      <div class="flex items-center justify-between border-b border-white/10 pb-3">
+        <h3 class="text-sm font-bold text-blue-400 flex items-center gap-2">
+          <i data-lucide="package" class="w-4 h-4"></i>
+          Log Customer Order
+        </h3>
+        <button onclick="closeModal('modal-add-order')" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="form-order" class="space-y-3">
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-[11px] font-medium text-slate-400 mb-1">Customer Name</label>
+            <input type="text" id="ord-name" required placeholder="e.g. Usman Ali" class="clean-input w-full px-3 py-2 text-xs">
+          </div>
+          <div>
+            <label class="block text-[11px] font-medium text-slate-400 mb-1">City</label>
+            <input type="text" id="ord-city" required placeholder="e.g. Lahore" class="clean-input w-full px-3 py-2 text-xs">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-[11px] font-medium text-slate-400 mb-1">Tracking #</label>
+            <input type="text" id="ord-tracking" placeholder="PE-9021" class="clean-input w-full px-3 py-2 text-xs font-mono">
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-blue-300 mb-1">Price (Rs.) *</label>
+            <input type="number" id="ord-price" required step="50" placeholder="e.g. 3500" class="clean-input w-full px-3 py-2 text-xs font-mono font-bold">
+          </div>
+        </div>
+
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-900/40">
+          Save Order
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: MOBILE QR CONNECT -->
   <!-- ========================================================================= -->
   <div id="modal-qr" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl hidden items-center justify-center p-4">
-    <div class="revtap-card rounded-2xl p-6 text-center max-w-sm w-full shadow-2xl space-y-4 border border-white/20">
+    <div class="modal-glass p-6 text-center max-w-sm w-full space-y-4">
       <div class="flex items-center justify-between border-b border-white/10 pb-3">
         <span class="text-xs font-semibold uppercase text-emerald-400 flex items-center gap-1.5">
           <i data-lucide="smartphone" class="w-4 h-4"></i>
           Connect Mobile Phone
         </span>
-        <button id="btn-close-qr" class="text-slate-400 hover:text-white">
+        <button onclick="closeModal('modal-qr')" class="text-slate-400 hover:text-white">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -513,13 +783,13 @@
 
       <div class="space-y-1">
         <p class="text-xs text-white font-semibold">1. Open Camera on your Phone</p>
-        <p class="text-[11px] text-slate-400">2. Scan on your local Wi-Fi to use seamlessly</p>
+        <p class="text-[11px] text-slate-400">2. Scan on your Wi-Fi to use seamlessly</p>
         <span id="qr-network-url" class="font-mono text-xs font-semibold text-emerald-400 block bg-black/40 p-2 rounded-xl border border-white/10 mt-2 select-all">
           http://192.168.1.14:5000
         </span>
       </div>
 
-      <button id="btn-done-qr" class="w-full py-2.5 rounded-xl btn-emerald text-white text-xs font-semibold shadow">
+      <button onclick="closeModal('modal-qr')" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow">
         Done
       </button>
     </div>

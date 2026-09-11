@@ -121,9 +121,78 @@ app.get('/api/state', (req, res) => {
     const deliveryRate = resolvedOrders > 0 ? (deliveredOrdersCount / resolvedOrders) * 100 : 0;
     const rtoRate = resolvedOrders > 0 ? (returnedOrdersCount / resolvedOrders) * 100 : 0;
 
-    // 6. MASTER TRUE NET CASH POCKET PROFIT:
-    // If courier remittances are logged, use actual cash collected from couriers.
-    // If not yet logged, fallback to delivered order sales value.
+    // 6. Consolidated Chronological Transaction Stream (Matches FinPay Inspiration)
+    const allTransactions = [];
+    
+    courierTx.forEach(t => {
+      const isRecv = t.type === 'RECEIVED_FROM_COURIER';
+      allTransactions.push({
+        id: t.id,
+        kind: 'courier',
+        title: isRecv ? `${t.courier} Remittance Received` : `${t.courier} Shipping Paid`,
+        category: isRecv ? 'Courier Remittance' : 'Courier Shipping Fee',
+        type: isRecv ? 'INCOME' : 'EXPENSE',
+        date: t.tx_date,
+        createdAt: t.created_at,
+        amount: t.amount,
+        notes: t.reference_note || '',
+        status: isRecv ? 'Received in Bank' : 'Paid at Dispatch'
+      });
+    });
+
+    adSpends.forEach(a => {
+      allTransactions.push({
+        id: a.id,
+        kind: 'ads',
+        title: `${a.platform} (${a.campaign_name || 'Campaign'})`,
+        category: 'Ad Spend (with 8% Tax)',
+        type: 'EXPENSE',
+        date: a.spend_date,
+        createdAt: a.created_at,
+        amount: a.effective_spend,
+        notes: `Raw: Rs. ${Math.round(a.raw_spend).toLocaleString('en-PK')}`,
+        status: 'Recorded'
+      });
+    });
+
+    stockEntries.forEach(s => {
+      allTransactions.push({
+        id: s.id,
+        kind: 'stock',
+        title: s.item_name,
+        category: 'Stock / Inventory',
+        type: 'EXPENSE',
+        date: s.entry_date,
+        createdAt: s.created_at,
+        amount: s.total_cost,
+        notes: `${s.units_count > 0 ? s.units_count + ' units ' : ''}${s.supplier ? '• ' + s.supplier : ''}`,
+        status: 'Procured'
+      });
+    });
+
+    expenses.forEach(e => {
+      allTransactions.push({
+        id: e.id,
+        kind: 'other_expense',
+        title: e.description || 'Other Business Expense',
+        category: e.category || 'Other Expense',
+        type: 'EXPENSE',
+        date: e.expense_date,
+        createdAt: e.created_at,
+        amount: e.amount,
+        notes: e.category || 'Work Expense',
+        status: 'Recorded'
+      });
+    });
+
+    // Sort by Date Descending, then CreatedAt Descending
+    allTransactions.sort((a, b) => {
+      const dComp = (b.date || '').localeCompare(a.date || '');
+      if (dComp !== 0) return dComp;
+      return (b.createdAt || '').localeCompare(a.createdAt || '');
+    });
+
+    // 7. MASTER TRUE NET CASH POCKET PROFIT:
     const totalCashInflow = totalCourierReceived > 0 ? totalCourierReceived : totalOrderSalesRevenue;
     const totalCashOutflow = totalStockCost + totalEffectiveAds + totalCourierPaid + totalOtherExpenses;
     const netPocketedProfit = totalCashInflow - totalCashOutflow;
@@ -153,6 +222,7 @@ app.get('/api/state', (req, res) => {
         deliveryRate,
         rtoRate,
         pendingCourierCash,
+        allTransactions,
         courierTx,
         adSpends,
         stockEntries,
@@ -162,6 +232,7 @@ app.get('/api/state', (req, res) => {
         lastUpdated: new Date().toLocaleTimeString()
       }
     });
+
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
