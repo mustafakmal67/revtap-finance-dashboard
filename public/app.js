@@ -1,6 +1,7 @@
-// RevTap™ Financial OS - FinPay-Inspired Dark Mode Client Controller (Mustafa)
+// RevTap™ Apple Pro Financial OS - Zero-Lag Client Controller (Mustafa)
 let currentFinanceData = null;
 let currentTxFilter = 'all';
+let currentQuickType = 'inflow';
 let barChartInstance = null;
 let donutChartInstance = null;
 let lastSavedTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -22,7 +23,7 @@ function updateAutoSaveBadge(timeStr) {
 function showToast(msg, type = "success") {
   updateAutoSaveBadge();
   const toast = document.createElement("div");
-  toast.className = `fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-2xl text-xs font-semibold text-white shadow-2xl flex items-center gap-2 animate-fade-in ${
+  toast.className = `fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-2xl text-xs font-semibold text-white shadow-2xl flex items-center gap-2 animate-apple-in ${
     type === "success" 
       ? "bg-emerald-600/90 border border-emerald-400/50 backdrop-blur-xl shadow-emerald-950/50" 
       : "bg-rose-600/90 border border-rose-400/50 backdrop-blur-xl shadow-rose-950/50"
@@ -33,7 +34,7 @@ function showToast(msg, type = "success") {
   setTimeout(() => toast.remove(), 3200);
 }
 
-// View Switcher
+// View Switcher (Dashboard / Transactions / Orders)
 function switchView(viewName) {
   const views = {
     dashboard: document.getElementById("view-dashboard"),
@@ -61,27 +62,28 @@ function switchView(viewName) {
   lucide.createIcons();
 }
 
-// Modal Controllers
-function openModal(id) {
-  const el = document.getElementById(id);
-  if (el) {
-    el.classList.remove("hidden");
-    el.classList.add("flex");
+function openQrModal() {
+  const modal = document.getElementById("modal-qr");
+  if (modal) {
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
   }
 }
 
-function closeModal(id) {
-  const el = document.getElementById(id);
-  if (el) {
-    el.classList.add("hidden");
-    el.classList.remove("flex");
+function closeQrModal() {
+  const modal = document.getElementById("modal-qr");
+  if (modal) {
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
   }
 }
 
-function openQrModal() { openModal("modal-qr"); }
-function closeQrModal() { closeModal("modal-qr"); }
+function toggleOrderForm() {
+  const form = document.getElementById("form-add-order");
+  if (form) form.classList.toggle("hidden");
+}
 
-// Copy financial summary to clipboard
+// Copy financial summary report
 function copySummary() {
   if (!currentFinanceData) return;
   const d = currentFinanceData;
@@ -100,11 +102,93 @@ function copySummary() {
   navigator.clipboard.writeText(text).then(() => {
     showToast("Financial report copied to clipboard!");
   }).catch(() => {
-    showToast("Summary copied!");
+    showToast("Report copied!");
   });
 }
 
-// Initialize on Load
+// -----------------------------------------------------------------------------
+// 1. QUICK LOGGER SEGMENT SELECTOR
+// -----------------------------------------------------------------------------
+function selectQuickType(type) {
+  currentQuickType = type;
+  document.getElementById("quick-entry-type").value = type;
+
+  // Update tabs
+  ["inflow", "shipping", "ads", "stock", "expense"].forEach(t => {
+    const el = document.getElementById(`tab-${t}`);
+    if (el) {
+      if (t === type) el.classList.add("active");
+      else el.classList.remove("active");
+    }
+  });
+
+  const lblSource = document.getElementById("quick-source-label");
+  const selCourier = document.getElementById("quick-select-courier");
+  const selPlatform = document.getElementById("quick-select-platform");
+  const txtDesc = document.getElementById("quick-text-desc");
+  const lblAmount = document.getElementById("quick-amount-label");
+  const btnSubmit = document.getElementById("btn-quick-submit");
+  const btnLabel = document.getElementById("btn-quick-label");
+  const boxStockUnits = document.getElementById("box-stock-units");
+  const inpNotes = document.getElementById("quick-notes");
+
+  // Reset visibilities
+  selCourier.classList.add("hidden");
+  selPlatform.classList.add("hidden");
+  txtDesc.classList.add("hidden");
+  boxStockUnits.classList.add("hidden");
+
+  if (type === "inflow") {
+    lblSource.textContent = "Courier Partner";
+    selCourier.classList.remove("hidden");
+    lblAmount.textContent = "Amount Received in Bank (Rs.) *";
+    lblAmount.className = "block text-[11px] font-semibold text-emerald-400 mb-1";
+    btnSubmit.className = "apple-btn-success w-full h-[44px]";
+    btnLabel.textContent = "Save Remittance";
+    inpNotes.placeholder = "Notes (e.g. PostEx Remittance batch #9021)";
+  } else if (type === "shipping") {
+    lblSource.textContent = "Courier Partner";
+    selCourier.classList.remove("hidden");
+    lblAmount.textContent = "Shipping Paid (Rs.) *";
+    lblAmount.className = "block text-[11px] font-semibold text-amber-300 mb-1";
+    btnSubmit.className = "apple-btn-primary w-full h-[44px] !bg-amber-600 hover:!bg-amber-500";
+    btnLabel.textContent = "Save Shipping";
+    inpNotes.placeholder = "Notes (e.g. 10 parcels shipping booking fee)";
+  } else if (type === "ads") {
+    lblSource.textContent = "Ad Platform";
+    selPlatform.classList.remove("hidden");
+    lblAmount.textContent = "Raw Ad Spend (Rs.) * (+8% Tax)";
+    lblAmount.className = "block text-[11px] font-semibold text-sky-400 mb-1";
+    btnSubmit.className = "apple-btn-primary w-full h-[44px] !bg-sky-600 hover:!bg-sky-500";
+    btnLabel.textContent = "Save Ad Spend";
+    inpNotes.placeholder = "Campaign name (e.g. Advantage+ Shopping / Earbuds)";
+  } else if (type === "stock") {
+    lblSource.textContent = "Item / Batch Name";
+    txtDesc.classList.remove("hidden");
+    txtDesc.placeholder = "e.g. 50x Smart Watches";
+    lblAmount.textContent = "Total Bill (Rs.) *";
+    lblAmount.className = "block text-[11px] font-semibold text-purple-300 mb-1";
+    btnSubmit.className = "apple-btn-primary w-full h-[44px] !bg-purple-600 hover:!bg-purple-500";
+    btnLabel.textContent = "Save Stock";
+    boxStockUnits.classList.remove("hidden");
+    inpNotes.placeholder = "Supplier / Market (e.g. Shah Alam / Bolton Market)";
+  } else if (type === "expense") {
+    lblSource.textContent = "Expense Description";
+    txtDesc.classList.remove("hidden");
+    txtDesc.placeholder = "e.g. Petrol for dispatch, flyers packaging";
+    lblAmount.textContent = "Expense Amount (Rs.) *";
+    lblAmount.className = "block text-[11px] font-semibold text-rose-400 mb-1";
+    btnSubmit.className = "apple-btn-primary w-full h-[44px] !bg-rose-600 hover:!bg-rose-500";
+    btnLabel.textContent = "Save Expense";
+    inpNotes.placeholder = "Notes / Work details";
+  }
+
+  lucide.createIcons();
+}
+
+// -----------------------------------------------------------------------------
+// 2. INITIALIZE ON LOAD
+// -----------------------------------------------------------------------------
 window.addEventListener("DOMContentLoaded", () => {
   setDefaultDates();
   initCharts();
@@ -112,7 +196,7 @@ window.addEventListener("DOMContentLoaded", () => {
   loadSystemInfo();
   loadUnifiedState();
 
-  // Periodic background sync every 8s
+  // Periodic background sync
   setInterval(() => {
     loadUnifiedState(true);
   }, 8000);
@@ -120,15 +204,10 @@ window.addEventListener("DOMContentLoaded", () => {
 
 function setDefaultDates() {
   const today = new Date().toISOString().slice(0, 10);
-  ["inflow-date", "cfee-date", "ad-date", "stock-date", "exp-date"].forEach(id => {
-    const el = document.getElementById(id);
-    if (el && !el.value) el.value = today;
-  });
+  const el = document.getElementById("quick-date");
+  if (el && !el.value) el.value = today;
 }
 
-// -----------------------------------------------------------------------------
-// 1. SYSTEM INFO & QR CODE
-// -----------------------------------------------------------------------------
 async function loadSystemInfo() {
   try {
     const res = await fetch("/api/system/info");
@@ -143,10 +222,10 @@ async function loadSystemInfo() {
 }
 
 // -----------------------------------------------------------------------------
-// 2. CHART.JS INITIALIZATION (MATCHES FINPAY INSPIRATION)
+// 3. CHART.JS INITIALIZATION
 // -----------------------------------------------------------------------------
 function initCharts() {
-  // 1. Dual Bar Chart (Money Statistics)
+  // Bar Chart
   const ctxBar = document.getElementById("chartMoneyStats");
   if (ctxBar) {
     barChartInstance = new Chart(ctxBar.getContext("2d"), {
@@ -156,14 +235,14 @@ function initCharts() {
         datasets: [{
           data: [0, 0, 0, 0, 0, 0],
           backgroundColor: [
-            "#10b981", // Emerald Inflow
-            "#38bdf8", // Sky Ads
-            "#a855f7", // Purple Stock
-            "#f59e0b", // Amber Courier
-            "#f43f5e", // Rose Expenses
-            "#2563eb"  // Blue Net Profit
+            "#30d158", // Mint Inflow
+            "#0a84ff", // Apple Blue Ads
+            "#bf5af2", // Apple Purple Stock
+            "#ffd60a", // Apple Gold Courier
+            "#ff453a", // Apple Red Expenses
+            "#ffffff"  // White Net Profit
           ],
-          borderRadius: 8,
+          borderRadius: 6,
           barThickness: 24
         }]
       },
@@ -181,12 +260,12 @@ function initCharts() {
         scales: {
           x: {
             grid: { display: false },
-            ticks: { color: "#94a3b8", font: { size: 10, family: 'Poppins' } }
+            ticks: { color: "#86868b", font: { size: 10 } }
           },
           y: {
-            grid: { color: "rgba(255, 255, 255, 0.05)" },
+            grid: { color: "rgba(255, 255, 255, 0.04)" },
             ticks: {
-              color: "#94a3b8",
+              color: "#86868b",
               font: { size: 10 },
               callback: (val) => val >= 1000 ? (val / 1000).toFixed(0) + "k" : val
             }
@@ -196,7 +275,7 @@ function initCharts() {
     });
   }
 
-  // 2. Donut Chart (Cost Breakdown Statistics)
+  // Donut Chart
   const ctxDonut = document.getElementById("chartExpenseDonut");
   if (ctxDonut) {
     donutChartInstance = new Chart(ctxDonut.getContext("2d"), {
@@ -205,7 +284,7 @@ function initCharts() {
         labels: ["Ad Spend", "Stock Sourcing", "Courier Paid", "Other Expenses"],
         datasets: [{
           data: [0, 0, 0, 0],
-          backgroundColor: ["#38bdf8", "#a855f7", "#f59e0b", "#f43f5e"],
+          backgroundColor: ["#0a84ff", "#bf5af2", "#ffd60a", "#ff453a"],
           borderWidth: 0,
           cutout: "75%"
         }]
@@ -227,7 +306,7 @@ function initCharts() {
 }
 
 // -----------------------------------------------------------------------------
-// 3. LOAD UNIFIED STATE (FETCH FROM SQLITE)
+// 4. LOAD UNIFIED STATE (FETCH FROM SQLITE)
 // -----------------------------------------------------------------------------
 async function loadUnifiedState(silent = false) {
   try {
@@ -238,27 +317,33 @@ async function loadUnifiedState(silent = false) {
     const d = json.data;
     currentFinanceData = d;
 
-    // 1. Master Hero Visa Card Net Profit
+    // 1. Hero Net Profit
     const heroProfit = document.getElementById("hero-net-profit");
     if (heroProfit) {
       heroProfit.textContent = formatPKR(d.netPocketedProfit);
       if (d.netPocketedProfit < 0) {
-        heroProfit.className = "text-3xl sm:text-4xl font-bold font-mono text-rose-300 tracking-normal";
+        heroProfit.className = "text-3xl sm:text-5xl font-bold font-mono text-[#ff453a] tracking-tight block";
       } else {
-        heroProfit.className = "text-3xl sm:text-4xl font-bold font-mono text-white tracking-normal";
+        heroProfit.className = "text-3xl sm:text-5xl font-bold font-mono text-white tracking-tight block";
       }
     }
 
     const heroStatusPill = document.getElementById("hero-status-pill");
     if (heroStatusPill) {
       if (d.netPocketedProfit >= 0) {
-        heroStatusPill.className = "px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 border border-white/30 text-white";
+        heroStatusPill.className = "badge-green";
         heroStatusPill.textContent = "● Live Profit";
       } else {
-        heroStatusPill.className = "px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/30 border border-rose-400/40 text-rose-200";
-        heroStatusPill.textContent = "● Investment Mode";
+        heroStatusPill.className = "badge-red";
+        heroStatusPill.textContent = "● Negative (Investment)";
       }
     }
+
+    const dispInflow = document.getElementById("hero-disp-inflow");
+    if (dispInflow) dispInflow.textContent = formatPKR(d.totalCourierReceived);
+
+    const dispOutflow = document.getElementById("hero-disp-outflow");
+    if (dispOutflow) dispOutflow.textContent = formatPKR(d.totalCashOutflow);
 
     // 2. Top 3 Metric Cards
     const statInflow = document.getElementById("stat-total-inflow");
@@ -270,8 +355,8 @@ async function loadUnifiedState(silent = false) {
     const statPending = document.getElementById("stat-pending-courier");
     if (statPending) statPending.textContent = formatPKR(d.pendingCourierCash);
 
-    const dispBalance = document.getElementById("disp-stat-balance");
-    if (dispBalance) dispBalance.textContent = formatPKR(d.netPocketedProfit);
+    const dispNet = document.getElementById("disp-stat-net");
+    if (dispNet) dispNet.textContent = `Net: ${formatPKR(d.netPocketedProfit)}`;
 
     // 3. Update Legend Amounts
     const legAds = document.getElementById("leg-ads-amt");
@@ -286,7 +371,7 @@ async function loadUnifiedState(silent = false) {
     const legExp = document.getElementById("leg-exp-amt");
     if (legExp) legExp.textContent = formatPKR(d.totalOtherExpenses);
 
-    // 4. Update Bar & Donut Charts
+    // 4. Update Charts
     if (barChartInstance) {
       barChartInstance.data.datasets[0].data = [
         d.totalCourierReceived,
@@ -306,7 +391,7 @@ async function loadUnifiedState(silent = false) {
       donutChartInstance.update();
     }
 
-    // 5. Render Recent Transactions Table
+    // 5. Render Tables
     renderRecentTransactions(d.allTransactions);
     renderFullTransactions(d.allTransactions);
     renderOrders(d.orders);
@@ -319,14 +404,14 @@ async function loadUnifiedState(silent = false) {
 }
 
 // -----------------------------------------------------------------------------
-// 4. TRANSACTIONS LEDGER RENDERING (CHRONOLOGICAL STREAM)
+// 5. TRANSACTIONS LEDGER RENDERING
 // -----------------------------------------------------------------------------
 function filterRecentTx(filter) {
   currentTxFilter = filter;
   const buttons = document.querySelectorAll(".tx-filter-btn");
-  buttons.forEach(b => b.classList.remove("active", "bg-blue-600", "text-white"));
+  buttons.forEach(b => b.classList.remove("active"));
   if (event && event.currentTarget) {
-    event.currentTarget.classList.add("active", "bg-blue-600", "text-white");
+    event.currentTarget.classList.add("active");
   }
   if (currentFinanceData) {
     renderRecentTransactions(currentFinanceData.allTransactions);
@@ -338,11 +423,10 @@ function renderRecentTransactions(list) {
   if (!tbody) return;
 
   if (!list || list.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-500 text-xs">No transactions logged yet. Click any button above to log remittances, ads, or expenses!</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-500 text-xs">No transactions recorded yet. Use the Quick Entry bar above to log your first payment or expense!</td></tr>`;
     return;
   }
 
-  // Filter list based on current active tab
   let filtered = list;
   if (currentTxFilter === 'income') filtered = list.filter(t => t.type === 'INCOME');
   else if (currentTxFilter === 'ads') filtered = list.filter(t => t.kind === 'ads');
@@ -351,14 +435,14 @@ function renderRecentTransactions(list) {
 
   tbody.innerHTML = filtered.map(t => {
     const isIncome = t.type === 'INCOME';
-    const amtColor = isIncome ? "text-emerald-400 font-bold" : "text-slate-200 font-semibold";
+    const amtColor = isIncome ? "text-[#30d158] font-bold" : "text-white font-medium";
     const amtSign = isIncome ? "+" : "-";
 
-    let iconHtml = `<i data-lucide="arrow-down-left" class="w-3.5 h-3.5 text-emerald-400"></i>`;
-    if (t.kind === 'ads') iconHtml = `<i data-lucide="megaphone" class="w-3.5 h-3.5 text-sky-400"></i>`;
-    else if (t.kind === 'stock') iconHtml = `<i data-lucide="boxes" class="w-3.5 h-3.5 text-purple-400"></i>`;
-    else if (t.kind === 'other_expense') iconHtml = `<i data-lucide="receipt" class="w-3.5 h-3.5 text-rose-400"></i>`;
-    else if (t.kind === 'courier' && !isIncome) iconHtml = `<i data-lucide="truck" class="w-3.5 h-3.5 text-amber-400"></i>`;
+    let iconHtml = `<i data-lucide="arrow-down-left" class="w-3.5 h-3.5 text-[#30d158]"></i>`;
+    if (t.kind === 'ads') iconHtml = `<i data-lucide="megaphone" class="w-3.5 h-3.5 text-[#0a84ff]"></i>`;
+    else if (t.kind === 'stock') iconHtml = `<i data-lucide="boxes" class="w-3.5 h-3.5 text-[#bf5af2]"></i>`;
+    else if (t.kind === 'other_expense') iconHtml = `<i data-lucide="receipt" class="w-3.5 h-3.5 text-[#ff453a]"></i>`;
+    else if (t.kind === 'courier' && !isIncome) iconHtml = `<i data-lucide="truck" class="w-3.5 h-3.5 text-[#ffd60a]"></i>`;
 
     return `
       <tr class="hover:bg-white/[0.02] transition">
@@ -377,12 +461,12 @@ function renderRecentTransactions(list) {
         <td class="py-3 px-3 text-slate-400 text-xs truncate max-w-[140px]">${t.notes || '—'}</td>
         <td class="py-3 px-3 text-right font-mono ${amtColor} text-xs">${amtSign} ${formatPKR(t.amount)}</td>
         <td class="py-3 px-3 text-center">
-          <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${isIncome ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-700/60' : 'bg-slate-800 text-slate-300 border border-slate-700'}">
+          <span class="${isIncome ? 'badge-green' : 'badge-neutral'}">
             ${t.status}
           </span>
         </td>
         <td class="py-3 px-3 text-center">
-          <button onclick="deleteTx('${t.kind}', '${t.id}')" class="p-1 text-slate-500 hover:text-rose-400 transition" title="Delete">
+          <button onclick="deleteTx('${t.kind}', '${t.id}')" class="p-1 text-slate-500 hover:text-[#ff453a] transition" title="Delete">
             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
           </button>
         </td>
@@ -403,26 +487,19 @@ function renderFullTransactions(list) {
 
   tbody.innerHTML = list.map(t => {
     const isIncome = t.type === 'INCOME';
-    const amtColor = isIncome ? "text-emerald-400 font-bold" : "text-white font-semibold";
+    const amtColor = isIncome ? "text-[#30d158] font-bold" : "text-white font-medium";
     const amtSign = isIncome ? "+" : "-";
 
     return `
       <tr class="hover:bg-white/[0.02] transition">
         <td class="py-3 px-3 font-mono text-[11px] text-slate-400">${t.id}</td>
-        <td class="py-3 px-3">
-          <span class="font-medium text-white block text-xs">${t.title}</span>
-          <span class="text-[10px] text-slate-400">${t.category}</span>
-        </td>
+        <td class="py-3 px-3 font-medium text-white text-xs">${t.title}</td>
+        <td class="py-3 px-3 text-[11px] text-slate-400">${t.category}</td>
         <td class="py-3 px-3 font-mono text-[11px] text-slate-300">${t.date}</td>
         <td class="py-3 px-3 text-slate-400 text-xs">${t.notes || '—'}</td>
         <td class="py-3 px-3 text-right font-mono ${amtColor} text-xs">${amtSign} ${formatPKR(t.amount)}</td>
         <td class="py-3 px-3 text-center">
-          <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${isIncome ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-700/60' : 'bg-slate-800 text-slate-300 border border-slate-700'}">
-            ${t.status}
-          </span>
-        </td>
-        <td class="py-3 px-3 text-center">
-          <button onclick="deleteTx('${t.kind}', '${t.id}')" class="p-1 text-slate-500 hover:text-rose-400 transition" title="Delete">
+          <button onclick="deleteTx('${t.kind}', '${t.id}')" class="p-1 text-slate-500 hover:text-[#ff453a] transition" title="Delete">
             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
           </button>
         </td>
@@ -449,12 +526,12 @@ async function deleteTx(kind, id) {
       loadUnifiedState();
     }
   } catch (e) {
-    showToast("Error removing transaction", "error");
+    showToast("Error deleting transaction", "error");
   }
 }
 
 // -----------------------------------------------------------------------------
-// 5. ORDERS VIEW RENDERING
+// 6. ORDERS VIEW RENDERING
 // -----------------------------------------------------------------------------
 function renderOrders(orders) {
   const tbody = document.getElementById("orders-full-tbody");
@@ -466,9 +543,9 @@ function renderOrders(orders) {
   }
 
   tbody.innerHTML = orders.map(o => {
-    let statusClass = "bg-sky-950/80 text-sky-300 border-sky-700/60";
-    if (o.status === "Delivered") statusClass = "bg-emerald-950/80 text-emerald-300 border-emerald-700/60";
-    else if (o.status === "Returned") statusClass = "bg-rose-950/80 text-rose-300 border-rose-700/60";
+    let statusClass = "badge-neutral";
+    if (o.status === "Delivered") statusClass = "badge-green";
+    else if (o.status === "Returned") statusClass = "badge-red";
 
     return `
       <tr class="hover:bg-white/[0.02] transition">
@@ -483,12 +560,12 @@ function renderOrders(orders) {
         <td class="py-2.5 px-3 font-mono text-[11px] text-slate-300">${o.tracking_number || '—'}</td>
         <td class="py-2.5 px-3 text-right font-mono font-bold text-white text-xs">${formatPKR(o.selling_price)}</td>
         <td class="py-2.5 px-3 text-center">
-          <button onclick="cycleOrderStatus('${o.id}')" title="Click to change status" class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${statusClass} cursor-pointer hover:opacity-80 transition active:scale-95">
+          <button onclick="cycleOrderStatus('${o.id}')" title="Click to change status" class="${statusClass} cursor-pointer hover:opacity-80 transition">
             ${o.status} ↻
           </button>
         </td>
         <td class="py-2.5 px-3 text-center">
-          <button onclick="deleteOrder('${o.id}')" class="p-1 text-slate-500 hover:text-rose-400 transition" title="Delete">
+          <button onclick="deleteOrder('${o.id}')" class="p-1 text-slate-500 hover:text-[#ff453a] transition" title="Delete">
             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
           </button>
         </td>
@@ -521,178 +598,95 @@ async function deleteOrder(id) {
 }
 
 // -----------------------------------------------------------------------------
-// 6. FORM SUBMISSION EVENT LISTENERS
+// 7. FORM SUBMISSIONS & EVENT LISTENERS
 // -----------------------------------------------------------------------------
 function setupEventListeners() {
   
-  // 1. Submit Inflow (Remittance Received)
-  const formInflow = document.getElementById("form-inflow");
-  if (formInflow) {
-    formInflow.addEventListener("submit", async (e) => {
+  // 1. Submit Dynamic Quick Logger Form
+  const formQuick = document.getElementById("form-quick-entry");
+  if (formQuick) {
+    formQuick.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const payload = {
-        type: "RECEIVED_FROM_COURIER",
-        tx_date: document.getElementById("inflow-date").value,
-        courier: document.getElementById("inflow-courier").value,
-        amount: parseFloat(document.getElementById("inflow-amount").value) || 0,
-        reference_note: document.getElementById("inflow-notes").value
-      };
+      
+      const type = currentQuickType;
+      const date = document.getElementById("quick-date").value;
+      const amount = parseFloat(document.getElementById("quick-amount").value) || 0;
+      const notes = document.getElementById("quick-notes").value;
+
+      let endpoint = "";
+      let payload = {};
+
+      if (type === "inflow") {
+        endpoint = "/api/courier-tx";
+        payload = {
+          type: "RECEIVED_FROM_COURIER",
+          tx_date: date,
+          courier: document.getElementById("quick-select-courier").value,
+          amount: amount,
+          reference_note: notes
+        };
+      } else if (type === "shipping") {
+        endpoint = "/api/courier-tx";
+        payload = {
+          type: "PAID_TO_COURIER",
+          tx_date: date,
+          courier: document.getElementById("quick-select-courier").value,
+          amount: amount,
+          reference_note: notes
+        };
+      } else if (type === "ads") {
+        endpoint = "/api/ad-spend";
+        payload = {
+          spend_date: date,
+          platform: document.getElementById("quick-select-platform").value,
+          raw_spend: amount,
+          bank_tax_percent: 8.0,
+          campaign_name: notes
+        };
+      } else if (type === "stock") {
+        endpoint = "/api/stock-entry";
+        payload = {
+          entry_date: date,
+          item_name: document.getElementById("quick-text-desc").value || "Inventory Batch",
+          supplier: notes,
+          total_cost: amount,
+          units_count: parseInt(document.getElementById("quick-stock-units").value, 10) || 0
+        };
+      } else if (type === "expense") {
+        endpoint = "/api/expense";
+        payload = {
+          expense_date: date,
+          category: "Other Expense",
+          description: document.getElementById("quick-text-desc").value || "Work Expense",
+          amount: amount
+        };
+      }
 
       try {
-        const res = await fetch("/api/courier-tx", {
+        const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
         });
         const data = await res.json();
         if (data.success) {
-          showToast(`Remittance Saved: ${payload.courier} Rs. ${payload.amount}`);
-          document.getElementById("inflow-amount").value = "";
-          document.getElementById("inflow-notes").value = "";
-          closeModal("modal-add-inflow");
+          showToast(`Logged: Rs. ${amount.toLocaleString('en-PK')} saved!`);
+          document.getElementById("quick-amount").value = "";
+          document.getElementById("quick-notes").value = "";
+          const txtDesc = document.getElementById("quick-text-desc");
+          if (txtDesc) txtDesc.value = "";
           loadUnifiedState();
+        } else {
+          showToast("Error saving record", "error");
         }
       } catch (err) {
-        showToast("Error saving remittance", "error");
+        showToast("Error connecting to server", "error");
       }
     });
   }
 
-  // 2. Submit Courier Fee
-  const formCourierFee = document.getElementById("form-courier-fee");
-  if (formCourierFee) {
-    formCourierFee.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const payload = {
-        type: "PAID_TO_COURIER",
-        tx_date: document.getElementById("cfee-date").value,
-        courier: document.getElementById("cfee-courier").value,
-        amount: parseFloat(document.getElementById("cfee-amount").value) || 0,
-        reference_note: document.getElementById("cfee-notes").value
-      };
-
-      try {
-        const res = await fetch("/api/courier-tx", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (data.success) {
-          showToast(`Shipping Fee Saved: Rs. ${payload.amount}`);
-          document.getElementById("cfee-amount").value = "";
-          document.getElementById("cfee-notes").value = "";
-          closeModal("modal-add-courier-fee");
-          loadUnifiedState();
-        }
-      } catch (err) {
-        showToast("Error saving fee", "error");
-      }
-    });
-  }
-
-  // 3. Submit Ad Spend
-  const formAdSpend = document.getElementById("form-ad-spend");
-  if (formAdSpend) {
-    formAdSpend.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const payload = {
-        spend_date: document.getElementById("ad-date").value,
-        platform: document.getElementById("ad-platform").value,
-        raw_spend: parseFloat(document.getElementById("ad-raw").value) || 0,
-        bank_tax_percent: 8.0,
-        campaign_name: document.getElementById("ad-campaign").value
-      };
-
-      try {
-        const res = await fetch("/api/ad-spend", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (data.success) {
-          showToast(`Ad Spend Logged with 8% Bank Tax`);
-          document.getElementById("ad-raw").value = "";
-          document.getElementById("ad-campaign").value = "";
-          closeModal("modal-add-ad-spend");
-          loadUnifiedState();
-        }
-      } catch (err) {
-        showToast("Error saving ad spend", "error");
-      }
-    });
-  }
-
-  // 4. Submit Stock Entry
-  const formStock = document.getElementById("form-stock");
-  if (formStock) {
-    formStock.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const payload = {
-        entry_date: document.getElementById("stock-date").value,
-        item_name: document.getElementById("stock-name").value,
-        supplier: document.getElementById("stock-supplier").value,
-        total_cost: parseFloat(document.getElementById("stock-cost").value) || 0,
-        units_count: parseInt(document.getElementById("stock-units").value, 10) || 0
-      };
-
-      try {
-        const res = await fetch("/api/stock-entry", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (data.success) {
-          showToast(`Stock Batch Saved`);
-          document.getElementById("stock-name").value = "";
-          document.getElementById("stock-cost").value = "";
-          document.getElementById("stock-units").value = "";
-          document.getElementById("stock-supplier").value = "";
-          closeModal("modal-add-stock");
-          loadUnifiedState();
-        }
-      } catch (err) {
-        showToast("Error saving stock entry", "error");
-      }
-    });
-  }
-
-  // 5. Submit Other Business Expense
-  const formExpense = document.getElementById("form-expense");
-  if (formExpense) {
-    formExpense.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const payload = {
-        expense_date: document.getElementById("exp-date").value,
-        category: "Other Expense",
-        description: document.getElementById("exp-desc").value,
-        amount: parseFloat(document.getElementById("exp-amount").value) || 0
-      };
-
-      try {
-        const res = await fetch("/api/expense", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (data.success) {
-          showToast(`Expense Saved: Rs. ${payload.amount}`);
-          document.getElementById("exp-desc").value = "";
-          document.getElementById("exp-amount").value = "";
-          closeModal("modal-add-expense");
-          loadUnifiedState();
-        }
-      } catch (err) {
-        showToast("Error saving expense", "error");
-      }
-    });
-  }
-
-  // 6. Submit Customer Order
-  const formOrder = document.getElementById("form-order");
+  // 2. Submit Customer Order Form
+  const formOrder = document.getElementById("form-add-order");
   if (formOrder) {
     formOrder.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -711,12 +705,12 @@ function setupEventListeners() {
         });
         const data = await res.json();
         if (data.success) {
-          showToast(`Customer Order Saved`);
+          showToast(`Customer parcel logged`);
           document.getElementById("ord-name").value = "";
           document.getElementById("ord-city").value = "";
           document.getElementById("ord-tracking").value = "";
           document.getElementById("ord-price").value = "";
-          closeModal("modal-add-order");
+          formOrder.classList.add("hidden");
           loadUnifiedState();
         }
       } catch (err) {
@@ -729,7 +723,7 @@ function setupEventListeners() {
   const btnReset = document.getElementById("btn-reset-clean");
   if (btnReset) {
     btnReset.addEventListener("click", async () => {
-      if (confirm("Are you sure you want to wipe all records and start from Rs. 0 clean slate?")) {
+      if (confirm("Wipe all records and start from Rs. 0 clean slate?")) {
         try {
           const res = await fetch("/api/system/reset-clean", { method: "POST" });
           const data = await res.json();

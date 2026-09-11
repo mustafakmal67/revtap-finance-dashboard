@@ -1,272 +1,253 @@
-/* RevTap™ by Mustafa - FinPay-Inspired Luxury Dark Theme with Poppins Typography */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+/* RevTap™ Apple Pro Financial OS - Pure Dark Human Interface System */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 :root {
-  --bg-primary: #080d1a;
-  --bg-sidebar: #0c1326;
-  --bg-card: rgba(16, 24, 48, 0.75);
-  --bg-card-hover: rgba(22, 34, 66, 0.9);
-  --border-card: rgba(255, 255, 255, 0.07);
-  --border-focus: rgba(56, 189, 248, 0.4);
-  --blue-primary: #2563eb;
-  --blue-gradient: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 50%, #60a5fa 100%);
-  --emerald-gradient: linear-gradient(135deg, #006241 0%, #059669 50%, #10b981 100%);
-  --emerald-accent: #10b981;
-  --rose-accent: #f43f5e;
-  --text-primary: #f8fafc;
-  --text-muted: #94a3b8;
+  --apple-bg: #09090b;
+  --apple-surface: #121216;
+  --apple-surface-hover: #18181f;
+  --apple-card: #141419;
+  --apple-border: rgba(255, 255, 255, 0.08);
+  --apple-border-hover: rgba(255, 255, 255, 0.16);
+  --apple-green: #30d158;
+  --apple-blue: #0a84ff;
+  --apple-red: #ff453a;
+  --apple-gold: #ffd60a;
+  --apple-purple: #bf5af2;
+  --apple-text-primary: #ffffff;
+  --apple-text-secondary: #86868b;
+  --apple-text-tertiary: #52525b;
 }
 
 * {
   box-sizing: border-box;
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  letter-spacing: -0.01em;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+  letter-spacing: -0.015em;
 }
 
 body {
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
+  background-color: var(--apple-bg);
+  color: var(--apple-text-primary);
   min-height: 100vh;
   margin: 0;
   padding: 0;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .font-mono {
   font-family: 'JetBrains Mono', monospace;
+  letter-spacing: -0.02em;
 }
 
 /* ========================================================================= */
-/* DYNAMIC AMBIENT RUNNING GRADIENT BACKGROUND */
+/* APPLE REFINED CARDS & SURFACES */
 /* ========================================================================= */
-.ambient-bg {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: -1;
-  overflow: hidden;
-  pointer-events: none;
-  background: #080d1a;
-}
-
-.ambient-orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(110px);
-  opacity: 0.28;
-  will-change: transform;
-}
-
-.orb-blue {
-  top: -10%;
-  left: 15%;
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, #2563eb 0%, #1e1b4b 60%, transparent 80%);
-  animation: floatOrbBlue 22s ease-in-out infinite alternate;
-}
-
-.orb-emerald {
-  bottom: -10%;
-  right: 10%;
-  width: 550px;
-  height: 550px;
-  background: radial-gradient(circle, #059669 0%, #064e3b 60%, transparent 80%);
-  animation: floatOrbEmerald 26s ease-in-out infinite alternate;
-}
-
-@keyframes floatOrbBlue {
-  0% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(80px, 60px) scale(1.1); }
-  100% { transform: translate(-50px, 90px) scale(0.95); }
-}
-
-@keyframes floatOrbEmerald {
-  0% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(-90px, -60px) scale(1.15); }
-  100% { transform: translate(60px, -80px) scale(1.05); }
-}
-
-/* ========================================================================= */
-/* FINPAY-STYLE CARDS & CONTAINERS */
-/* ========================================================================= */
-.fin-card {
-  background: var(--bg-card);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid var(--border-card);
+.apple-card {
+  background-color: var(--apple-card);
+  border: 1px solid var(--apple-border);
   border-radius: 1.25rem;
-  box-shadow: 
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.06),
-    0 10px 30px -10px rgba(0, 0, 0, 0.5);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  transition: border-color 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
 }
 
-.fin-card:hover {
-  border-color: rgba(255, 255, 255, 0.12);
-  background: var(--bg-card-hover);
-  box-shadow: 
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-    0 14px 40px -10px rgba(0, 0, 0, 0.65);
+.apple-card:hover {
+  border-color: var(--apple-border-hover);
+  background-color: var(--apple-surface-hover);
 }
 
-/* Blue Glass Visa Card (Inspired by Screenshot) */
-.finpay-visa-card {
-  background: linear-gradient(135deg, #1e40af 0%, #2563eb 50%, #3b82f6 100%);
-  border-radius: 1.25rem;
-  padding: 1.5rem;
-  color: #ffffff;
+/* Apple Titanium Hero Card */
+.apple-titanium-card {
+  background: linear-gradient(145deg, #18181f 0%, #111116 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 1.5rem;
+  padding: 1.75rem;
   position: relative;
   overflow: hidden;
   box-shadow: 
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.3),
-    0 15px 35px -5px rgba(37, 99, 235, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.2),
+    0 12px 36px -8px rgba(0, 0, 0, 0.7);
 }
 
-.finpay-visa-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.4),
-    0 20px 45px -5px rgba(37, 99, 235, 0.55);
-}
-
-.finpay-visa-card::after {
+.apple-titanium-card::after {
   content: '';
   position: absolute;
-  right: -25px;
-  top: -25px;
-  width: 140px;
-  height: 140px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.25) 0%, transparent 70%);
-  border-radius: 50%;
-  pointer-events-none;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
 }
 
-/* Sidebar Navigation Items */
-.nav-item {
+/* Apple Segmented Switcher */
+.apple-segmented-bar {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.65rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.25rem;
   border-radius: 0.875rem;
-  color: #94a3b8;
-  font-size: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 0.25rem;
+}
+
+.apple-segment-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 0.65rem;
+  font-size: 0.8rem;
   font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.nav-item:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.nav-item.active {
-  color: #ffffff;
-  background: #2563eb;
-  font-weight: 600;
-  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
-}
-
-/* Quick Action Circle Buttons (Inspired by Screenshot) */
-.action-btn-circle {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.4rem;
-  cursor: pointer;
-  transition: transform 0.15s ease;
-}
-
-.action-btn-circle:hover {
-  transform: translateY(-2px);
-}
-
-.action-btn-circle:active {
-  transform: translateY(0);
-}
-
-.circle-icon-box {
-  width: 3rem;
-  height: 3rem;
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #f8fafc;
+  color: var(--apple-text-secondary);
   transition: all 0.2s ease;
+  white-space: nowrap;
+  cursor: pointer;
+  border: none;
+  background: transparent;
 }
 
-.action-btn-circle:hover .circle-icon-box {
-  background: rgba(37, 99, 235, 0.25);
-  border-color: #3b82f6;
-  color: #60a5fa;
-  box-shadow: 0 0 16px rgba(37, 99, 235, 0.35);
+.apple-segment-btn:hover {
+  color: var(--apple-text-primary);
 }
 
-/* Clean Inputs */
-.clean-input {
-  background: rgba(10, 15, 30, 0.85);
+.apple-segment-btn.active {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* Clean Apple Inputs */
+.apple-input {
+  background: rgba(0, 0, 0, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0.75rem;
   color: #ffffff;
   font-size: 0.875rem;
-  min-height: 42px;
-  transition: all 0.2s ease;
+  min-height: 44px;
+  padding: 0.65rem 0.85rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  width: 100%;
 }
 
 @media (max-width: 640px) {
-  .clean-input {
-    font-size: 16px;
-    min-height: 46px;
+  .apple-input {
+    font-size: 16px; /* Prevents auto-zoom in mobile Safari/Chrome */
+    min-height: 48px;
   }
 }
 
-.clean-input:focus {
+.apple-input:focus {
   outline: none;
-  border-color: #3b82f6;
-  background: rgba(12, 19, 38, 0.95);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+  border-color: var(--apple-blue);
+  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.25);
 }
 
-/* Modals */
-.modal-glass {
-  background: rgba(13, 20, 40, 0.95);
-  backdrop-filter: blur(28px);
-  -webkit-backdrop-filter: blur(28px);
+/* Apple Buttons */
+.apple-btn-primary {
+  background: #0a84ff;
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: 0.75rem;
+  padding: 0.65rem 1.25rem;
+  font-size: 0.85rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.apple-btn-primary:hover {
+  background: #0077ed;
+  transform: translateY(-1px);
+}
+
+.apple-btn-primary:active {
+  transform: translateY(0);
+}
+
+.apple-btn-success {
+  background: #30d158;
+  color: #000000;
+  font-weight: 700;
+  border-radius: 0.75rem;
+  padding: 0.65rem 1.25rem;
+  font-size: 0.85rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.apple-btn-success:hover {
+  background: #28b84c;
+  transform: translateY(-1px);
+}
+
+/* Status Badges */
+.badge-green {
+  background: rgba(48, 209, 88, 0.12);
+  color: #30d158;
+  border: 1px solid rgba(48, 209, 88, 0.25);
+  border-radius: 9999px;
+  font-size: 0.725rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.badge-red {
+  background: rgba(255, 69, 58, 0.12);
+  color: #ff453a;
+  border: 1px solid rgba(255, 69, 58, 0.25);
+  border-radius: 9999px;
+  font-size: 0.725rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.badge-neutral {
+  background: rgba(255, 255, 255, 0.08);
+  color: #d1d1d6;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 1.5rem;
-  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.85);
+  border-radius: 9999px;
+  font-size: 0.725rem;
+  font-weight: 500;
+  padding: 0.2rem 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
 }
 
-/* Custom Scrollbar */
+/* Custom Minimal Scrollbar */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #080d1a;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: #27272a;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #3f3f46;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
+/* Keyframe animations */
+@keyframes appleFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.animate-apple-in {
+  animation: appleFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
