@@ -359,8 +359,13 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  const localIP = getLocalNetworkIP();
-  console.log(`RevTap Live at http://localhost:${PORT} and http://${localIP}:${PORT}`);
-  console.log(`Data stored in SQLite: ${db.DB_PATH}`);
-});
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  app.listen(PORT, '0.0.0.0', () => {
+    const localIP = getLocalNetworkIP();
+    console.log(`RevTap Live at http://localhost:${PORT} and http://${localIP}:${PORT}`);
+    console.log(`Data stored in SQLite: ${db.DB_PATH}`);
+  });
+}
+
+module.exports = app;
+
