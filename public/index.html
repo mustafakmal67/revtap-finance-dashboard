@@ -230,7 +230,7 @@
             <!-- Amount Input -->
             <div class="sm:col-span-3">
               <label id="quick-amount-label" class="block text-[11px] font-semibold text-emerald-400 mb-1">Amount Received (Rs.) *</label>
-              <input type="number" id="quick-amount" required min="1" step="50" placeholder="e.g. 5000" class="apple-input text-xs font-mono font-bold">
+              <input type="number" id="quick-amount" required step="any" min="0" inputmode="decimal" placeholder="e.g. 5000" class="apple-input text-xs font-mono font-bold">
             </div>
 
             <!-- Submit Button -->
@@ -249,7 +249,7 @@
               <input type="text" id="quick-notes" placeholder="Notes (e.g. PostEx Remittance batch #9021 or 10 parcels shipping)" class="apple-input text-xs">
             </div>
             <div class="sm:col-span-4" id="box-stock-units">
-              <input type="number" id="quick-stock-units" placeholder="Units count (optional e.g. 50)" class="apple-input text-xs">
+              <input type="number" id="quick-stock-units" step="any" min="0" inputmode="numeric" placeholder="Units count (optional e.g. 50)" class="apple-input text-xs">
             </div>
           </div>
 
@@ -428,7 +428,7 @@
           </div>
           <div class="sm:col-span-2">
             <label class="block text-[11px] text-slate-400 mb-1">Selling Price (Rs.)</label>
-            <input type="number" id="ord-price" required step="50" placeholder="e.g. 3500" class="apple-input text-xs font-mono font-bold">
+            <input type="number" id="ord-price" required step="any" min="0" inputmode="decimal" placeholder="e.g. 3500" class="apple-input text-xs font-mono font-bold">
           </div>
           <div class="sm:col-span-2 flex items-end">
             <button type="submit" class="apple-btn-primary w-full h-[44px]">Save Order</button>

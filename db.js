@@ -3,12 +3,20 @@ const { DatabaseSync } = require('node:sqlite');
 const path = require('path');
 const fs = require('fs');
 
-const DATA_DIR = path.join(__dirname, 'data');
+const DATA_DIR = process.env.VERCEL ? path.join('/tmp', 'revtap-data') : path.join(__dirname, 'data');
 const BACKUPS_DIR = path.join(DATA_DIR, 'backups');
 const DB_PATH = path.join(DATA_DIR, 'brand_finances.db');
 
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-if (!fs.existsSync(BACKUPS_DIR)) fs.mkdirSync(BACKUPS_DIR, { recursive: true });
+if (!fs.existsSync(DATA_DIR)) {
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  } catch (e) {}
+}
+if (!fs.existsSync(BACKUPS_DIR)) {
+  try {
+    fs.mkdirSync(BACKUPS_DIR, { recursive: true });
+  } catch (e) {}
+}
 
 const db = new DatabaseSync(DB_PATH);
 db.exec('PRAGMA journal_mode = WAL;');
@@ -119,6 +127,86 @@ function resetDatabaseClean() {
   return { success: true, message: 'All database records cleared to fresh 0 starting state.' };
 }
 
+function exportAllData() {
+  const courierTx = queryAll('SELECT * FROM courier_transactions ORDER BY tx_date DESC, created_at DESC');
+  const adSpends = queryAll('SELECT * FROM ad_spend_entries ORDER BY spend_date DESC, created_at DESC');
+  const stockEntries = queryAll('SELECT * FROM stock_entries ORDER BY entry_date DESC, created_at DESC');
+  const expenses = queryAll('SELECT * FROM business_expenses ORDER BY expense_date DESC, created_at DESC');
+  const orders = queryAll('SELECT * FROM orders ORDER BY order_date DESC, created_at DESC');
+  return { courierTx, adSpends, stockEntries, expenses, orders };
+}
+
+function importAllData(payload) {
+  if (!payload) return { success: false, error: 'No data provided' };
+  
+  if (Array.isArray(payload.courierTx)) {
+    for (const t of payload.courierTx) {
+      if (!t.id) continue;
+      const existing = queryOne('SELECT id FROM courier_transactions WHERE id = ?', [t.id]);
+      if (!existing) {
+        execute(`
+          INSERT INTO courier_transactions (id, type, tx_date, courier, amount, parcels_count, reference_note, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `, [t.id, t.type || 'RECEIVED_FROM_COURIER', t.tx_date || '', t.courier || 'PostEx', parseFloat(t.amount) || 0, parseInt(t.parcels_count, 10) || 0, t.reference_note || '', t.created_at || new Date().toISOString()]);
+      }
+    }
+  }
+
+  if (Array.isArray(payload.adSpends)) {
+    for (const a of payload.adSpends) {
+      if (!a.id) continue;
+      const existing = queryOne('SELECT id FROM ad_spend_entries WHERE id = ?', [a.id]);
+      if (!existing) {
+        execute(`
+          INSERT INTO ad_spend_entries (id, spend_date, platform, raw_spend, bank_tax_percent, effective_spend, campaign_name, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `, [a.id, a.spend_date || '', a.platform || 'Meta Ads', parseFloat(a.raw_spend) || 0, parseFloat(a.bank_tax_percent) || 8.0, parseFloat(a.effective_spend) || (parseFloat(a.raw_spend) || 0) * 1.08, a.campaign_name || '', a.created_at || new Date().toISOString()]);
+      }
+    }
+  }
+
+  if (Array.isArray(payload.stockEntries)) {
+    for (const s of payload.stockEntries) {
+      if (!s.id) continue;
+      const existing = queryOne('SELECT id FROM stock_entries WHERE id = ?', [s.id]);
+      if (!existing) {
+        execute(`
+          INSERT INTO stock_entries (id, entry_date, item_name, supplier, total_cost, units_count, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `, [s.id, s.entry_date || '', s.item_name || '', s.supplier || '', parseFloat(s.total_cost) || 0, parseInt(s.units_count, 10) || 0, s.created_at || new Date().toISOString()]);
+      }
+    }
+  }
+
+  if (Array.isArray(payload.expenses)) {
+    for (const e of payload.expenses) {
+      if (!e.id) continue;
+      const existing = queryOne('SELECT id FROM business_expenses WHERE id = ?', [e.id]);
+      if (!existing) {
+        execute(`
+          INSERT INTO business_expenses (id, expense_date, category, description, amount, created_at)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `, [e.id, e.expense_date || '', e.category || 'Other Expense', e.description || '', parseFloat(e.amount) || 0, e.created_at || new Date().toISOString()]);
+      }
+    }
+  }
+
+  if (Array.isArray(payload.orders)) {
+    for (const o of payload.orders) {
+      if (!o.id) continue;
+      const existing = queryOne('SELECT id FROM orders WHERE id = ?', [o.id]);
+      if (!existing) {
+        execute(`
+          INSERT INTO orders (id, order_date, customer_name, customer_city, tracking_number, courier, selling_price, status, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [o.id, o.order_date || '', o.customer_name || '', o.customer_city || '', o.tracking_number || '', o.courier || 'PostEx', parseFloat(o.selling_price) || 0, o.status || 'In Transit', o.created_at || new Date().toISOString()]);
+      }
+    }
+  }
+
+  return { success: true, message: 'Sync data rehydrated successfully' };
+}
+
 function queryAll(sql, params = []) {
   const stmt = db.prepare(sql);
   return stmt.all(...params);
@@ -141,6 +229,8 @@ module.exports = {
   initSchema,
   resetDatabaseClean,
   createBackup,
+  exportAllData,
+  importAllData,
   queryAll,
   queryOne,
   execute,

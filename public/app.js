@@ -6,6 +6,9 @@ let barChartInstance = null;
 let donutChartInstance = null;
 let lastSavedTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
+const LOCAL_STORAGE_KEY = 'revtap_pro_finance_data_v2';
+const LOCAL_SYNC_KEY = 'revtap_pro_sync_bundle_v2';
+
 // Currency Formatter for PKR
 function formatPKR(val) {
   if (isNaN(val) || val === null || val === undefined) return "Rs. 0";
@@ -192,20 +195,60 @@ function selectQuickType(type) {
 window.addEventListener("DOMContentLoaded", () => {
   setDefaultDates();
   initCharts();
+  
+  // 1. Instant 0ms render from Local Authoritative Cache
+  loadFromLocalCache();
+
   setupEventListeners();
   loadSystemInfo();
+  
+  // 2. Sync with Backend
   loadUnifiedState();
 
   // Periodic background sync
   setInterval(() => {
     loadUnifiedState(true);
-  }, 8000);
+  }, 10000);
 });
 
 function setDefaultDates() {
   const today = new Date().toISOString().slice(0, 10);
   const el = document.getElementById("quick-date");
   if (el && !el.value) el.value = today;
+}
+
+function loadFromLocalCache() {
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (raw) {
+      const cached = JSON.parse(raw);
+      if (cached && typeof cached === 'object') {
+        applyStateToUI(cached, false);
+      }
+    }
+  } catch (e) {
+    console.warn("Local cache read error", e);
+  }
+}
+
+function saveToLocalCache(d) {
+  try {
+    if (d) {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(d));
+      if (d.courierTx || d.adSpends || d.stockEntries || d.expenses || d.orders) {
+        const bundle = {
+          courierTx: d.courierTx || [],
+          adSpends: d.adSpends || [],
+          stockEntries: d.stockEntries || [],
+          expenses: d.expenses || [],
+          orders: d.orders || []
+        };
+        localStorage.setItem(LOCAL_SYNC_KEY, JSON.stringify(bundle));
+      }
+    }
+  } catch (e) {
+    console.warn("Local cache save error", e);
+  }
 }
 
 async function loadSystemInfo() {
@@ -306,7 +349,101 @@ function initCharts() {
 }
 
 // -----------------------------------------------------------------------------
-// 4. LOAD UNIFIED STATE (FETCH FROM SQLITE)
+// 4. APPLY STATE TO UI (SHARED RENDERER)
+// -----------------------------------------------------------------------------
+function applyStateToUI(d, isFreshServerSync = false) {
+  if (!d) return;
+  currentFinanceData = d;
+
+  // 1. Hero Net Profit
+  const heroProfit = document.getElementById("hero-net-profit");
+  if (heroProfit) {
+    heroProfit.textContent = formatPKR(d.netPocketedProfit);
+    if (d.netPocketedProfit < 0) {
+      heroProfit.className = "text-3xl sm:text-5xl font-bold font-mono text-[#ff453a] tracking-tight block";
+    } else {
+      heroProfit.className = "text-3xl sm:text-5xl font-bold font-mono text-white tracking-tight block";
+    }
+  }
+
+  const heroStatusPill = document.getElementById("hero-status-pill");
+  if (heroStatusPill) {
+    if (d.netPocketedProfit >= 0) {
+      heroStatusPill.className = "badge-green";
+      heroStatusPill.textContent = "● Live Profit";
+    } else {
+      heroStatusPill.className = "badge-red";
+      heroStatusPill.textContent = "● Negative (Investment)";
+    }
+  }
+
+  const dispInflow = document.getElementById("hero-disp-inflow");
+  if (dispInflow) dispInflow.textContent = formatPKR(d.totalCourierReceived);
+
+  const dispOutflow = document.getElementById("hero-disp-outflow");
+  if (dispOutflow) dispOutflow.textContent = formatPKR(d.totalCashOutflow);
+
+  // 2. Top 3 Metric Cards
+  const statInflow = document.getElementById("stat-total-inflow");
+  if (statInflow) statInflow.textContent = formatPKR(d.totalCourierReceived);
+
+  const statOutflow = document.getElementById("stat-total-outflow");
+  if (statOutflow) statOutflow.textContent = formatPKR(d.totalCashOutflow);
+
+  const statPending = document.getElementById("stat-pending-courier");
+  if (statPending) statPending.textContent = formatPKR(d.pendingCourierCash);
+
+  const dispNet = document.getElementById("disp-stat-net");
+  if (dispNet) dispNet.textContent = `Net: ${formatPKR(d.netPocketedProfit)}`;
+
+  // 3. Update Legend Amounts
+  const legAds = document.getElementById("leg-ads-amt");
+  if (legAds) legAds.textContent = formatPKR(d.totalEffectiveAds);
+
+  const legStock = document.getElementById("leg-stock-amt");
+  if (legStock) legStock.textContent = formatPKR(d.totalStockCost);
+
+  const legCourier = document.getElementById("leg-courier-amt");
+  if (legCourier) legCourier.textContent = formatPKR(d.totalCourierPaid);
+
+  const legExp = document.getElementById("leg-exp-amt");
+  if (legExp) legExp.textContent = formatPKR(d.totalOtherExpenses);
+
+  // 4. Update Charts
+  if (barChartInstance) {
+    barChartInstance.data.datasets[0].data = [
+      d.totalCourierReceived || 0,
+      d.totalEffectiveAds || 0,
+      d.totalStockCost || 0,
+      d.totalCourierPaid || 0,
+      d.totalOtherExpenses || 0,
+      Math.max(0, d.netPocketedProfit || 0)
+    ];
+    barChartInstance.update();
+  }
+
+  if (donutChartInstance) {
+    const costs = [
+      d.totalEffectiveAds || 0,
+      d.totalStockCost || 0,
+      d.totalCourierPaid || 0,
+      d.totalOtherExpenses || 0
+    ];
+    const hasCost = costs.some(c => c > 0);
+    donutChartInstance.data.datasets[0].data = hasCost ? costs : [1, 1, 1, 1];
+    donutChartInstance.update();
+  }
+
+  // 5. Render Tables
+  renderRecentTransactions(d.allTransactions || []);
+  renderFullTransactions(d.allTransactions || []);
+  renderOrders(d.orders || []);
+
+  updateAutoSaveBadge(d.lastUpdated || lastSavedTime);
+}
+
+// -----------------------------------------------------------------------------
+// 5. LOAD UNIFIED STATE (WITH AUTOMATIC SERVER REHYDRATION)
 // -----------------------------------------------------------------------------
 async function loadUnifiedState(silent = false) {
   try {
@@ -315,96 +452,55 @@ async function loadUnifiedState(silent = false) {
     if (!json.success) return;
 
     const d = json.data;
-    currentFinanceData = d;
+    const serverTxCount = (d.allTransactions || []).length;
+    const serverOrdersCount = (d.orders || []).length;
 
-    // 1. Hero Net Profit
-    const heroProfit = document.getElementById("hero-net-profit");
-    if (heroProfit) {
-      heroProfit.textContent = formatPKR(d.netPocketedProfit);
-      if (d.netPocketedProfit < 0) {
-        heroProfit.className = "text-3xl sm:text-5xl font-bold font-mono text-[#ff453a] tracking-tight block";
-      } else {
-        heroProfit.className = "text-3xl sm:text-5xl font-bold font-mono text-white tracking-tight block";
+    // Check if server is empty but client has local cached records (e.g. serverless cold start)
+    const rawSync = localStorage.getItem(LOCAL_SYNC_KEY);
+    if (serverTxCount === 0 && serverOrdersCount === 0 && rawSync) {
+      try {
+        const bundle = JSON.parse(rawSync);
+        const hasLocalData = (bundle.courierTx && bundle.courierTx.length > 0) ||
+                             (bundle.adSpends && bundle.adSpends.length > 0) ||
+                             (bundle.stockEntries && bundle.stockEntries.length > 0) ||
+                             (bundle.expenses && bundle.expenses.length > 0) ||
+                             (bundle.orders && bundle.orders.length > 0);
+
+        if (hasLocalData) {
+          // Auto-rehydrate server database from local cache
+          await fetch('/api/sync/state', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: rawSync
+          });
+          // Re-fetch fresh state
+          const reRes = await fetch("/api/state");
+          const reJson = await reRes.json();
+          if (reJson.success) {
+            applyStateToUI(reJson.data, true);
+            saveToLocalCache(reJson.data);
+            if (!silent) lucide.createIcons();
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn("Auto-rehydration error", e);
       }
     }
 
-    const heroStatusPill = document.getElementById("hero-status-pill");
-    if (heroStatusPill) {
-      if (d.netPocketedProfit >= 0) {
-        heroStatusPill.className = "badge-green";
-        heroStatusPill.textContent = "● Live Profit";
-      } else {
-        heroStatusPill.className = "badge-red";
-        heroStatusPill.textContent = "● Negative (Investment)";
-      }
-    }
-
-    const dispInflow = document.getElementById("hero-disp-inflow");
-    if (dispInflow) dispInflow.textContent = formatPKR(d.totalCourierReceived);
-
-    const dispOutflow = document.getElementById("hero-disp-outflow");
-    if (dispOutflow) dispOutflow.textContent = formatPKR(d.totalCashOutflow);
-
-    // 2. Top 3 Metric Cards
-    const statInflow = document.getElementById("stat-total-inflow");
-    if (statInflow) statInflow.textContent = formatPKR(d.totalCourierReceived);
-
-    const statOutflow = document.getElementById("stat-total-outflow");
-    if (statOutflow) statOutflow.textContent = formatPKR(d.totalCashOutflow);
-
-    const statPending = document.getElementById("stat-pending-courier");
-    if (statPending) statPending.textContent = formatPKR(d.pendingCourierCash);
-
-    const dispNet = document.getElementById("disp-stat-net");
-    if (dispNet) dispNet.textContent = `Net: ${formatPKR(d.netPocketedProfit)}`;
-
-    // 3. Update Legend Amounts
-    const legAds = document.getElementById("leg-ads-amt");
-    if (legAds) legAds.textContent = formatPKR(d.totalEffectiveAds);
-
-    const legStock = document.getElementById("leg-stock-amt");
-    if (legStock) legStock.textContent = formatPKR(d.totalStockCost);
-
-    const legCourier = document.getElementById("leg-courier-amt");
-    if (legCourier) legCourier.textContent = formatPKR(d.totalCourierPaid);
-
-    const legExp = document.getElementById("leg-exp-amt");
-    if (legExp) legExp.textContent = formatPKR(d.totalOtherExpenses);
-
-    // 4. Update Charts
-    if (barChartInstance) {
-      barChartInstance.data.datasets[0].data = [
-        d.totalCourierReceived,
-        d.totalEffectiveAds,
-        d.totalStockCost,
-        d.totalCourierPaid,
-        d.totalOtherExpenses,
-        Math.max(0, d.netPocketedProfit)
-      ];
-      barChartInstance.update();
-    }
-
-    if (donutChartInstance) {
-      const costs = [d.totalEffectiveAds, d.totalStockCost, d.totalCourierPaid, d.totalOtherExpenses];
-      const hasCost = costs.some(c => c > 0);
-      donutChartInstance.data.datasets[0].data = hasCost ? costs : [1, 1, 1, 1];
-      donutChartInstance.update();
-    }
-
-    // 5. Render Tables
-    renderRecentTransactions(d.allTransactions);
-    renderFullTransactions(d.allTransactions);
-    renderOrders(d.orders);
-
-    updateAutoSaveBadge(d.lastUpdated);
+    // Normal server update
+    applyStateToUI(d, true);
+    saveToLocalCache(d);
     if (!silent) lucide.createIcons();
+
   } catch (err) {
-    console.error("Failed to load state:", err);
+    console.warn("Backend offline or unreachable, rendering from local cache:", err);
+    loadFromLocalCache();
   }
 }
 
 // -----------------------------------------------------------------------------
-// 5. TRANSACTIONS LEDGER RENDERING
+// 6. TRANSACTIONS LEDGER RENDERING
 // -----------------------------------------------------------------------------
 function filterRecentTx(filter) {
   currentTxFilter = filter;
@@ -531,7 +627,7 @@ async function deleteTx(kind, id) {
 }
 
 // -----------------------------------------------------------------------------
-// 6. ORDERS VIEW RENDERING
+// 7. ORDERS VIEW RENDERING
 // -----------------------------------------------------------------------------
 function renderOrders(orders) {
   const tbody = document.getElementById("orders-full-tbody");
@@ -598,7 +694,7 @@ async function deleteOrder(id) {
 }
 
 // -----------------------------------------------------------------------------
-// 7. FORM SUBMISSIONS & EVENT LISTENERS
+// 8. FORM SUBMISSIONS & EVENT LISTENERS
 // -----------------------------------------------------------------------------
 function setupEventListeners() {
   
@@ -610,8 +706,14 @@ function setupEventListeners() {
       
       const type = currentQuickType;
       const date = document.getElementById("quick-date").value;
-      const amount = parseFloat(document.getElementById("quick-amount").value) || 0;
+      const amountStr = document.getElementById("quick-amount").value;
+      const amount = parseFloat(amountStr) || 0;
       const notes = document.getElementById("quick-notes").value;
+
+      if (amount <= 0 && isNaN(amount)) {
+        showToast("Please enter a valid amount", "error");
+        return;
+      }
 
       let endpoint = "";
       let payload = {};
@@ -650,7 +752,7 @@ function setupEventListeners() {
           item_name: document.getElementById("quick-text-desc").value || "Inventory Batch",
           supplier: notes,
           total_cost: amount,
-          units_count: parseInt(document.getElementById("quick-stock-units").value, 10) || 0
+          units_count: parseFloat(document.getElementById("quick-stock-units").value) || 0
         };
       } else if (type === "expense") {
         endpoint = "/api/expense";
@@ -675,6 +777,8 @@ function setupEventListeners() {
           document.getElementById("quick-notes").value = "";
           const txtDesc = document.getElementById("quick-text-desc");
           if (txtDesc) txtDesc.value = "";
+          const stockUnits = document.getElementById("quick-stock-units");
+          if (stockUnits) stockUnits.value = "";
           loadUnifiedState();
         } else {
           showToast("Error saving record", "error");
@@ -725,6 +829,8 @@ function setupEventListeners() {
     btnReset.addEventListener("click", async () => {
       if (confirm("Wipe all records and start from Rs. 0 clean slate?")) {
         try {
+          localStorage.removeItem(LOCAL_STORAGE_KEY);
+          localStorage.removeItem(LOCAL_SYNC_KEY);
           const res = await fetch("/api/system/reset-clean", { method: "POST" });
           const data = await res.json();
           if (data.success) {

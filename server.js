@@ -419,8 +419,26 @@ app.delete('/api/order/:id', (req, res) => {
 });
 
 // -----------------------------------------------------------------------------
-// 8. RESET CLEAN
+// 8. RESET CLEAN & UNIVERSAL SYNC
 // -----------------------------------------------------------------------------
+app.get('/api/sync/state', (req, res) => {
+  try {
+    const data = db.exportAllData();
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/sync/state', (req, res) => {
+  try {
+    const result = db.importAllData(req.body);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.post('/api/system/reset-clean', (req, res) => {
   const result = db.resetDatabaseClean();
   res.json(result);
